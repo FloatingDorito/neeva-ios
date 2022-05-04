@@ -125,8 +125,7 @@ struct CardGrid: View {
             return
         }
 
-        var columnCount = tabCardModel.columnCount
-
+        let columnCount: Int
         if width > 1000 {
             columnCount = 4
         } else {
