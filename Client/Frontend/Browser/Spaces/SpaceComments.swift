@@ -49,7 +49,7 @@ struct SpaceCommentsView: View {
     }
 
     func addCommentRequest(commentAdded: String) {
-        _ = AddSpaceCommentRequest(
+        _ = SpaceServiceProvider.shared.addSpaceComment(
             spaceID: space.id.id, comment: commentAdded)
     }
 
@@ -61,7 +61,11 @@ struct SpaceCommentsView: View {
                     .foregroundColor(.label)
                 Spacer()
                 Button(action: {
-                    model.addingComment = true
+                    if let _ = NeevaUserInfo.shared.id {
+                        model.addingComment = true
+                    } else {
+                        SceneDelegate.getBVC(for: nil).showSpacesLoginRequiredSheet()
+                    }
                 }) {
                     Text("Add")
                         .withFont(.bodyMedium)

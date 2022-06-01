@@ -70,6 +70,8 @@ struct ZeroQueryView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    @ObservedObject var spaceStoreSuggested = SpaceStore.suggested
+
     @Default(.expandSuggestedSites) private var expandSuggestedSites
     @Default(.expandSearches) private var expandSearches
     @Default(.expandSpaces) private var expandSpaces
@@ -115,7 +117,7 @@ struct ZeroQueryView: View {
 
     var suggestedSpace: some View {
         RecommendedSpacesView(
-            store: SpaceStore.suggested,
+            store: spaceStoreSuggested,
             viewModel: viewModel,
             expandSuggestedSpace: $expandSuggestedSpace
         )
@@ -134,6 +136,10 @@ struct ZeroQueryView: View {
                     }
                     Spacer()
                 }
+                // only set for zero query first run
+                .if(!Defaults[.didFirstNavigation]) { view in
+                    view.frame(minHeight: geom.size.height)
+                }
             }
             .environment(\.zeroQueryWidth, geom.size.width)
             .animation(nil)
@@ -147,10 +153,9 @@ struct ZeroQueryView: View {
     @ViewBuilder
     private func contentView(_ parentGeom: GeometryProxy) -> some View {
         #if XYZ
-            promoCardView(parentGeom)
             suggestedSitesView(parentGeom)
-            browseNFTsView
             if FeatureFlag[.newWeb3Features] {
+                browseNFTsView
                 yourCollectionsView
             }
             searchesView
@@ -159,7 +164,33 @@ struct ZeroQueryView: View {
             suggestedSitesView(parentGeom)
             searchesView
             spacesView
+            firstRunBranding
         #endif
+    }
+
+    @ViewBuilder private var firstRunBranding: some View {
+        if !Defaults[.didFirstNavigation] {
+            Spacer()
+            Spacer()
+            VStack(spacing: 8) {
+                HStack(spacing: 10) {
+                    Spacer()
+                    Image("splash")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 22)
+                    Image("neeva-letter-only")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(Color.secondary)
+                        .frame(maxHeight: 18)
+                    Spacer()
+                }
+                Text("The first ad-free, private search engine")
+                    .foregroundColor(Color.secondary)
+            }
+        }
     }
 
     @ViewBuilder
@@ -211,23 +242,21 @@ struct ZeroQueryView: View {
             ratingsCard(parentGeom.size.width)
         }
 
-        if !SpaceStore.suggested.allSpaces.isEmpty,
-            expandSuggestedSpace != .hidden
+        if (Defaults[.didFirstNavigation] && viewModel.suggestedSitesViewModel.sites.count > 0)
+            || NeevaConstants.currentTarget == .xyz
         {
-            suggestedSpace
-        }
-
-        if Defaults[.signedInOnce] || NeevaConstants.currentTarget == .xyz {
             ZeroQueryHeader(
-                title: NeevaConstants.currentTarget == .xyz ? "Web3 Tools" : "Suggested sites",
+                title: "Suggested sites",
                 action: { expandSuggestedSites.advance() },
                 label: "\(expandSuggestedSites.verb) this section",
-                icon: expandSuggestedSites.icon
+                icon: expandSuggestedSites.icon,
+                hideToggle: !Defaults[.didFirstNavigation]
             )
 
             if expandSuggestedSites != .hidden {
                 SuggestedSitesView(
                     isExpanded: expandSuggestedSites == .expanded,
+                    withHome: Defaults[.signedInOnce],
                     viewModel: viewModel.suggestedSitesViewModel)
             }
 
@@ -240,23 +269,19 @@ struct ZeroQueryView: View {
     @ViewBuilder
     private var searchesView: some View {
         ZeroQueryHeader(
-            title: NeevaConstants.currentTarget == .xyz
-                ? "Search on Ethereum (or the web)" : "Searches",
+            title: "Searches",
             action: { expandSearches.toggle() },
             label: "\(expandSearches ? "hides" : "shows") this section",
-            icon: expandSearches ? .chevronUp : .chevronDown
+            icon: expandSearches ? .chevronUp : .chevronDown,
+            hideToggle: !Defaults[.didFirstNavigation]
         )
 
         if expandSearches {
-            if !Defaults[.signedInOnce] {
-                if NeevaConstants.currentTarget == .xyz {
-                    SuggestedXYZSearchesView()
-                        .onChange(of: cryptoPublicKey) { _ in
-                            viewModel.updateState()
-                        }
-                } else {
-                    SuggestedPreviewSearchesView()
-                }
+            if NeevaConstants.currentTarget == .xyz {
+                SuggestedXYZSearchesView()
+                    .onChange(of: cryptoPublicKey) { _ in
+                        viewModel.updateState()
+                    }
             } else {
                 SuggestedSearchesView()
             }
@@ -265,29 +290,31 @@ struct ZeroQueryView: View {
 
     @ViewBuilder
     private var spacesView: some View {
-        if NeevaUserInfo.shared.isUserLoggedIn && Defaults[.signedInOnce] {
+        if !SpaceStore.shared.allSpaces.isEmpty {
+            // show my spaces
             ZeroQueryHeader(
                 title: "Spaces",
                 action: { expandSpaces.toggle() },
                 label: "\(expandSpaces ? "hides" : "shows") this section",
-                icon: expandSpaces ? .chevronUp : .chevronDown
+                icon: expandSpaces ? .chevronUp : .chevronDown,
+                hideToggle: !Defaults[.didFirstNavigation]
             )
             if expandSpaces {
                 SuggestedSpacesView()
             }
-        }
-
-        if !SpaceStore.suggested.allSpaces.isEmpty,
-            expandSuggestedSpace == .hidden
-        {
-            suggestedSpace
+        } else {
+            // show suggested spaces
+            if !spaceStoreSuggested.allSpaces.isEmpty {
+                suggestedSpace
+            }
         }
     }
 
     @ViewBuilder
     private var browseNFTsView: some View {
         ZeroQueryHeader(
-            title: "Browse Web3"
+            title: "Browse Web3",
+            hideToggle: !Defaults[.didFirstNavigation]
         )
         SuggestedSitesView(
             isExpanded: false,
@@ -299,35 +326,10 @@ struct ZeroQueryView: View {
         @ViewBuilder
         private var yourCollectionsView: some View {
             ZeroQueryHeader(
-                title: "Your Collections"
+                title: "Your Collections",
+                hideToggle: !Defaults[.didFirstNavigation]
             )
             YourCollectionsView(bvc: viewModel.bvc)
         }
     #endif
 }
-
-#if DEBUG
-    struct ZeroQueryView_Previews: PreviewProvider {
-        static var previews: some View {
-            NavigationView {
-                ZeroQueryView()
-                    .navigationBarTitleDisplayMode(.inline)
-            }
-            .environmentObject(
-                ZeroQueryModel(
-                    bvc: SceneDelegate.getBVC(for: nil),
-                    profile: BrowserProfile(localName: "profile"), shareURLHandler: { _, _ in })
-            )
-            .environmentObject(SuggestedSitesViewModel.preview)
-            .environmentObject(
-                SuggestedSearchesModel(
-                    suggestedQueries: [
-                        ("lebron james", .init(url: "https://neeva.com", title: "", guid: "1")),
-                        ("neeva", .init(url: "https://neeva.com", title: "", guid: "2")),
-                        ("knives out", .init(url: "https://neeva.com", title: "", guid: "3")),
-                    ]
-                )
-            )
-        }
-    }
-#endif

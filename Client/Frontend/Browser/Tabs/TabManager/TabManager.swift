@@ -35,16 +35,17 @@ class TabManager: NSObject {
     @Default(.tabGroupNames) private var tabGroupDict: [String: String]
     var tabGroups: [String: TabGroup] = [:]
     var childTabs: [Tab] {
-        getAllTabGroup().flatMap(\.children)
+        tabGroups.values.flatMap(\.children)
     }
-
-    var didRestoreAllTabs: Bool = false
 
     // Use `selectedTabPublisher` to observe changes to `selectedTab`.
     private(set) var selectedTab: Tab?
     private(set) var selectedTabPublisher = CurrentValueSubject<Tab?, Never>(nil)
     /// A publisher that forwards the url from the current selectedTab
     private(set) var selectedTabURLPublisher = CurrentValueSubject<URL?, Never>(nil)
+    /// Publisher used to observe changes to the `selectedTab.webView`.
+    /// Will also update if the `WebView` is set to nil.
+    private(set) var selectedTabWebViewPublisher = CurrentValueSubject<WKWebView?, Never>(nil)
     private var selectedTabSubscription: AnyCancellable?
     private var selectedTabURLSubscription: AnyCancellable?
 
@@ -158,7 +159,9 @@ class TabManager: NSObject {
     func getTabFor(_ url: URL) -> Tab? {
         assert(Thread.isMainThread)
 
-        let options: [URL.EqualsOption] = [.normalizeHost, .ignoreFragment, .ignoreLastSlash]
+        let options: [URL.EqualsOption] = [
+            .normalizeHost, .ignoreFragment, .ignoreLastSlash, .ignoreScheme,
+        ]
 
         log.info("Looking for matching tab, url: \(url)")
 
@@ -229,15 +232,20 @@ class TabManager: NSObject {
 
         assert(tab === selectedTab, "Expected tab is selected")
 
-        selectedTab?.createWebview()
-        selectedTab?.lastExecutedTime = Date.nowMilliseconds()
+        guard let selectedTab = selectedTab else {
+            return
+        }
+
+        if selectedTab.shouldCreateWebViewUponSelect {
+            updateWebViewForSelectedTab(notify: false)
+        }
+
+        selectedTab.lastExecutedTime = Date.nowMilliseconds()
+        selectedTab.applyTheme()
 
         if notify {
             sendSelectTabNotifications(previous: previous)
-        }
-
-        if let tab = selectedTab {
-            tab.applyTheme()
+            selectedTabWebViewPublisher.send(selectedTab.webView)
         }
 
         if let tab = tab, tab.isIncognito, let url = tab.url, NeevaConstants.isAppHost(url.host),
@@ -266,15 +274,33 @@ class TabManager: NSObject {
         }
     }
 
-    //Called by other classes to signal that they are entering/exiting private mode
-    //This is called by TabTrayVC when the private mode button is pressed and BEFORE we've switched to the new mode
-    //we only want to remove all private tabs when leaving PBM and not when entering.
+    func updateWebViewForSelectedTab(notify: Bool) {
+        selectedTab?.createWebViewOrReloadIfNeeded()
+
+        if notify {
+            selectedTabWebViewPublisher.send(selectedTab?.webView)
+        }
+    }
+
+    // Called by other classes to signal that they are entering/exiting private mode
+    // This is called by TabTrayVC when the private mode button is pressed and BEFORE we've switched to the new mode
+    // we only want to remove all private tabs when leaving PBM and not when entering.
     func willSwitchTabMode(leavingPBM: Bool) {
         // Clear every time entering/exiting this mode.
         Tab.ChangeUserAgent.privateModeHostList = Set<String>()
 
         if Defaults[.closeIncognitoTabs] && leavingPBM {
             removeAllIncognitoTabs()
+        }
+    }
+
+    func flagAllTabsToReload() {
+        for tab in tabs {
+            if tab == selectedTab {
+                tab.reload()
+            } else if tab.webView != nil {
+                tab.needsReloadUponSelect = true
+            }
         }
     }
 
@@ -389,9 +415,8 @@ class TabManager: NSObject {
     }
 
     func sendSelectTabNotifications(previous: Tab? = nil) {
-        if let tab = selectedTab {
-            selectedTabPublisher.send(tab)
-        }
+        selectedTabPublisher.send(selectedTab)
+        updateWebViewForSelectedTab(notify: true)
 
         if let tab = previous {
             TabEvent.post(.didLoseFocus, for: tab)
@@ -438,12 +463,12 @@ class TabManager: NSObject {
         updateTabGroupsAndSendNotifications(notify: true)
     }
 
-    func getTabGroup(for id: String) -> TabGroup? {
-        return tabGroups[id]
+    func getTabGroup(for rootUUID: String) -> TabGroup? {
+        return tabGroups[rootUUID]
     }
 
-    func getAllTabGroup() -> [TabGroup] {
-        Array(tabGroups.values)
+    func getTabGroup(for tab: Tab) -> TabGroup? {
+        return tabGroups[tab.rootUUID]
     }
 
     func closeTabGroup(_ item: TabGroup) {

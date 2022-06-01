@@ -87,6 +87,10 @@ public struct LogConfig {
         case SettingAccountSettings
         /// Click default browser in setting
         case SettingDefaultBrowser
+        /// Click theme in setting
+        case SettingTheme
+        /// Click app icon in setting
+        case SettingAppIcon
         /// Click sign out in setting
         case SettingSignout
         /// Click Data Management in setting
@@ -192,8 +196,6 @@ public struct LogConfig {
         case DefaultBrowserInterstitialImp
         /// Start an experiment
         case StartExperiment
-        /// Default browser interstitial impression (skip to browser)
-        case DefaultBrowserInterstitialImpSkipToBrowser
         /// Tap on Get started in welcome screen
         case GetStartedInWelcome
         /// Resolved AdService attributionToken (if one exists)
@@ -205,6 +207,10 @@ public struct LogConfig {
         case FirstNavigation
         /// Log interstitial logging error
         case LogErrorForInterstitialEvents
+        /// Log attribution token request error
+        case NeevaAttributionRequestError
+        /// Default browser interstitial restore imp
+        case DefaultBrowserInterstitialRestoreImp
 
         // MARK: promo card
         /// Promo card is rendered on screen
@@ -214,7 +220,7 @@ public struct LogConfig {
         /// Close default browser promo card
         case CloseDefaultBrowserPromo
         /// Close preview sign up card
-        case ClosePreviewSignUprPromo
+        case ClosePreviewSignUpPromo
         case DefaultBrowserOnboardingInterstitialSkip
         case DefaultBrowserOnboardingInterstitialRemind
         case DefaultBrowserOnboardingInterstitialOpen
@@ -260,16 +266,14 @@ public struct LogConfig {
         case SpacesDetailEntityClicked
         case SpacesDetailEditButtonClicked
         case SpacesDetailShareButtonClicked
+        case SpacesRecommendedDetailUIVisited
+        case SpacesLoginRequired
         case OwnerSharedSpace
         case FollowerSharedSpace
         case SocialShare
         /// This is for aggregate stats collection
         case space_app_view
         case SaveToSpace
-        case BlackFridayPromo
-        case CloseBlackFridayPromo
-        case BlackFridayNotifyPromo
-        case CloseBlackFridayNotifyPromo
         case ViewSpacesFromSheet
         case SpaceFilterClicked
         case OpenSuggestedSpace
@@ -320,6 +324,7 @@ public struct LogConfig {
 
         // MARK: Cheatsheet(NeevaScope)
         case CheatsheetPopoverImpression
+        case CheatsheetUGCIndicatorImpression
         case OpenCheatsheet
         case CheatsheetEducationImpressionOnSRP
         case CheatsheetEducationImpressionOnPage
@@ -363,6 +368,9 @@ public struct LogConfig {
         case PersonalSign
         case TransactionSuccessful
         case TransactionAttempted
+
+        // MARK: Cookie Cutter
+        case CookieNoticeHandled
     }
 
     /// Specify a comma separated string with these values to
@@ -388,6 +396,7 @@ public struct LogConfig {
         case Feedback = "Feedback"
         case DebugMode = "DebugMode"
         case Web3 = "Web3"
+        case CookieCutter = "CookieCutter"
     }
 
     public static var enabledLoggingCategories: Set<InteractionCategory>?
@@ -402,6 +411,7 @@ public struct LogConfig {
             || category == .DebugMode
             || category == .PromoCard
             || category == .Web3
+            || category == .CookieCutter
         {
             return true
         }
@@ -435,11 +445,19 @@ public struct LogConfig {
         for path: LogConfig.Interaction
     ) -> Bool {
         let category = LogConfig.category(for: path)
-        return category == .FirstRun
+        let validCategory =
+            category == .FirstRun
             || category == .Stability
             || category == .PromoCard
             || category == .Web3
             || category == .Notification
+            || category == .Cheatsheet
+            || category == .CookieCutter
+
+        let validInteraction =
+            path == .SpacesLoginRequired || path == .SpacesRecommendedDetailUIVisited
+
+        return validCategory || validInteraction
     }
 
     // MARK: - Category
@@ -488,6 +506,8 @@ public struct LogConfig {
         // MARK: - Settings
         case .SettingAccountSettings: return .Settings
         case .SettingDefaultBrowser: return .Settings
+        case .SettingTheme: return .Settings
+        case .SettingAppIcon: return .Settings
         case .SettingSignout: return .Settings
         case .ViewDataManagement: return .Settings
         case .ViewTrackingProtection: return .Settings
@@ -540,7 +560,6 @@ public struct LogConfig {
         case .DefaultBrowserOnboardingInterstitialRemind: return .FirstRun
         case .DefaultBrowserOnboardingInterstitialOpen: return .FirstRun
         case .DefaultBrowserInterstitialImp: return .FirstRun
-        case .DefaultBrowserInterstitialImpSkipToBrowser: return .FirstRun
         case .OpenDefaultBrowserURL: return .FirstRun
         case .StartExperiment: return .FirstRun
         case .GetStartedInWelcome: return .FirstRun
@@ -549,12 +568,14 @@ public struct LogConfig {
         case .ResolvedAttributionTokenRetryError: return .FirstRun
         case .FirstNavigation: return .FirstRun
         case .LogErrorForInterstitialEvents: return .FirstRun
+        case .NeevaAttributionRequestError: return .FirstRun
+        case .DefaultBrowserInterstitialRestoreImp: return .FirstRun
 
         // MARK: - PromoCard
         case .PromoCardAppear: return .PromoCard
         case .PromoDefaultBrowser: return .PromoCard
         case .CloseDefaultBrowserPromo: return .PromoCard
-        case .ClosePreviewSignUprPromo: return .PromoCard
+        case .ClosePreviewSignUpPromo: return .PromoCard
         case .GoToSysAppSettings: return .PromoCard
         case .DefaultBrowserPromoCardImp: return .PromoCard
         case .DismissDefaultBrowserOnboardingScreen: return .PromoCard
@@ -592,15 +613,13 @@ public struct LogConfig {
         case .SpacesDetailEntityClicked: return .Spaces
         case .SpacesDetailEditButtonClicked: return .Spaces
         case .SpacesDetailShareButtonClicked: return .Spaces
+        case .SpacesRecommendedDetailUIVisited: return .Spaces
+        case .SpacesLoginRequired: return .Spaces
         case .OwnerSharedSpace: return .Spaces
         case .FollowerSharedSpace: return .Spaces
         case .SocialShare: return .Spaces
         case .space_app_view: return .Spaces
         case .SaveToSpace: return .Spaces
-        case .BlackFridayPromo: return .Spaces
-        case .CloseBlackFridayPromo: return .Spaces
-        case .BlackFridayNotifyPromo: return .Spaces
-        case .CloseBlackFridayNotifyPromo: return .Spaces
         case .ViewSpacesFromSheet: return .Spaces
         case .SpaceFilterClicked: return .Spaces
         case .OpenSuggestedSpace: return .Spaces
@@ -643,6 +662,7 @@ public struct LogConfig {
         case .RecipeCheatsheetShowMoreRecipe: return .RecipeCheatsheet
 
         case .CheatsheetPopoverImpression: return .Cheatsheet
+        case .CheatsheetUGCIndicatorImpression: return .Cheatsheet
         case .OpenCheatsheet: return .Cheatsheet
         case .CheatsheetEducationImpressionOnSRP: return .Cheatsheet
         case .CheatsheetEducationImpressionOnPage: return .Cheatsheet
@@ -686,6 +706,9 @@ public struct LogConfig {
         case .PersonalSign: return .Web3
         case .TransactionSuccessful: return .Web3
         case .TransactionAttempted: return .Web3
+
+        // MARK: Cookie Cutter
+        case .CookieNoticeHandled: return .CookieCutter
         }
     }
 
@@ -733,6 +756,10 @@ public struct LogConfig {
         public static let AttributionTokenErrorToken = "AttributionTokenErrorToken"
         public static let AttributionTokenErrorDataStr = "AttributionTokenErrorDataStr"
         public static let AttributionTokenErrorResponseCode = "AttributionTokenErrorResponseCode"
+
+        /// The name of the Cookie Cutter provider that was used.
+        public static let CookieCutterProviderUsed = "CookieCutterProviderUsed"
+
         /// First Run Logging Error
         public static let FirstRunLogErrorMessage = "FirstRunLogErrorMessage"
     }

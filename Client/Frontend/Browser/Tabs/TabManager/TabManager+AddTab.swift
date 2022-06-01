@@ -189,7 +189,9 @@ extension TabManager {
             return false
         }
 
-        let options: [URL.EqualsOption] = [.normalizeHost, .ignoreFragment, .ignoreLastSlash]
+        let options: [URL.EqualsOption] = [
+            .normalizeHost, .ignoreFragment, .ignoreLastSlash, .ignoreScheme,
+        ]
         let shouldCreateTabGroup = childTabInitialURL.equals(newTabURL, with: options)
 
         /// TODO: To make this more effecient, we should refactor `TabGroupManager`
@@ -233,16 +235,15 @@ extension TabManager {
             var tab: Tab!
             if let tabIndex = savedTab.tabIndex {
                 tab = addTab(
-                    urlRequest, atIndex: tabIndex, flushToDisk: false, zombie: false,
+                    urlRequest, atIndex: tabIndex, flushToDisk: false, zombie: true,
                     isIncognito: isIncognito, notify: false)
             } else {
                 tab = addTab(
                     urlRequest, afterTab: getTabForUUID(uuid: savedTab.parentUUID ?? ""),
-                    flushToDisk: false, zombie: false, isIncognito: isIncognito, notify: false)
+                    flushToDisk: false, zombie: true, isIncognito: isIncognito, notify: false)
             }
 
             savedTab.configureTab(tab, imageStore: store.imageStore)
-            tab.restore(tab.webView!)
 
             if savedTab.isSelected {
                 selectedSavedTab = tab
@@ -256,7 +257,7 @@ extension TabManager {
         // Prevents a sticky tab tray
         SceneDelegate.getBVC(with: scene).browserModel.cardTransitionModel.update(to: .hidden)
 
-        if let selectedSavedTab = selectedSavedTab, shouldSelectTab {
+        if let selectedSavedTab = selectedSavedTab, shouldSelectTab, selectedTab == nil {
             self.selectTab(selectedSavedTab, notify: true)
         }
 

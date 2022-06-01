@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import Defaults
 import Shared
 import SwiftUI
 
@@ -14,14 +15,18 @@ struct BrowserBottomBarView: View {
     @EnvironmentObject var tabContainerModel: TabContainerModel
 
     @ViewBuilder var toolbar: some View {
-        if !browserModel.showGrid && !chromeModel.inlineToolbar && !chromeModel.isEditingLocation {
+        if !browserModel.showGrid && !chromeModel.inlineToolbar && !chromeModel.isEditingLocation
+            && (Defaults[.didFirstNavigation] || NeevaConstants.currentTarget == .xyz)
+        {
             TabToolbarContent(
                 onNeevaButtonPressed: {
                     ClientLogger.shared.logCounter(
                         .OpenCheatsheet,
                         attributes: EnvironmentHelper.shared.getAttributes()
                     )
-                    chromeModel.clearCheatsheetPopoverFlags()
+                    CheatsheetMenuViewModel.promoModel.openSheet(
+                        on: chromeModel.topBarDelegate?.tabManager.selectedTab?.url
+                    )
                     bvc.showCheatSheetOverlay()
                 }
             )
@@ -34,7 +39,6 @@ struct BrowserBottomBarView: View {
         ZStack {
             if !chromeModel.inlineToolbar && !chromeModel.isEditingLocation
                 && !chromeModel.keyboardShowing && !overlayManager.hideBottomBar
-                && tabContainerModel.currentContentUI != .previewHome
             {
                 toolbar
                     .transition(.opacity)

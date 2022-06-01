@@ -64,6 +64,8 @@ public enum NeevaExperiment {
     }
 }
 
+// Make sure to update LaunchArguments.ForceExperimentControlArm logic
+// in TestAppDelegate when adding a new experiment
 extension NeevaExperiment {
 
     /* Experiment Example */
@@ -73,19 +75,14 @@ extension NeevaExperiment {
     //    }
 
     /* Experiment Example */
-    public enum DefaultBrowserRemindMeLater: String, ExperimentArms {
-        case control
-        case isInDefaultBrowserEnhancementExp
-    }
-
     public enum PromoCardTypeAfterFirstRun: String, ExperimentArms {
         case control
         case previewSignUp
     }
 
-    public enum NotificatonPromptOnAppLaunch: String, ExperimentArms {
+    public enum DefaultBrowserChangeButton: String, ExperimentArms {
         case control
-        case askForNotificatonPromptOnAppLaunch
+        case changeButton
     }
 }
 
@@ -94,15 +91,11 @@ extension NeevaExperiment {
 //public static let defaultBrowserPromptV2 = Self()
 //}
 
-extension NeevaExperiment.Experiment where Arm == NeevaExperiment.DefaultBrowserRemindMeLater {
-    public static let defaultBrowserRemindMeLater = Self()
-}
-
 extension NeevaExperiment.Experiment
 where Arm == NeevaExperiment.PromoCardTypeAfterFirstRun {
     public static let promoCardTypeAfterFirstRun = Self()
 }
 
-extension NeevaExperiment.Experiment where Arm == NeevaExperiment.NotificatonPromptOnAppLaunch {
-    public static let notificatonPromptOnAppLaunch = Self()
+extension NeevaExperiment.Experiment where Arm == NeevaExperiment.DefaultBrowserChangeButton {
+    public static let defaultBrowserChangeButton = Self()
 }

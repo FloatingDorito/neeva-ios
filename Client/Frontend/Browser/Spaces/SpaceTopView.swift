@@ -19,9 +19,8 @@ struct SpaceTopView: View {
     @State private var showConfirmDeleteAlert = false
     @ObservedObject var primitive: SpaceCardDetails
     @Binding var headerVisible: Bool
-    let isShowingProfileUI: Bool
-    var onProfileUIDismissed: (() -> Void)? = nil
-
+    let addToAnotherSpace: (URL, String?, String?) -> Void
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     var space: Space? {
         primitive.manager.get(for: primitive.id)
     }
@@ -38,11 +37,7 @@ struct SpaceTopView: View {
         HStack {
             Button(
                 action: {
-                    if isShowingProfileUI {
-                        onProfileUIDismissed?()
-                    } else {
-                        gridModel.closeDetailView()
-                    }
+                    presentationMode.wrappedValue.dismiss()
                 },
                 label: {
                     Symbol(.arrowBackward, label: "Return to all Spaces view")
@@ -95,7 +90,8 @@ struct SpaceTopView: View {
                 action: {
                     DispatchQueue.main.async {
                         SceneDelegate.getBVC(with: tabModel.manager.scene).showModal(
-                            style: .spaces
+                            style: .spaces,
+                            toPosition: .top
                         ) {
                             AddOrUpdateSpaceContent(space: space, config: .addSpaceItem) {
                                 helpURL in
@@ -175,7 +171,8 @@ struct SpaceTopView: View {
                 action: {
                     SceneDelegate.getBVC(with: tabModel.manager.scene)
                         .showModal(
-                            style: .spaces
+                            style: .spaces,
+                            toPosition: .top
                         ) {
                             AddOrUpdateSpaceContent(space: space, config: .updateSpace)
                                 .environmentObject(spacesModel)
@@ -233,6 +230,17 @@ struct SpaceTopView: View {
         }
     }
 
+    @ViewBuilder var addToAnotherSpaceButton: some View {
+        if let space = space {
+            Button {
+                self.addToAnotherSpace(space.url, space.displayTitle, space.description)
+            } label: {
+                Label("Add to another Space", systemSymbol: .docOnDoc)
+            }
+
+        }
+    }
+
     var descriptionToggle: some View {
         Toggle(isOn: $showDescriptions) {
             Text("Show Descriptions")
@@ -259,6 +267,7 @@ struct SpaceTopView: View {
             content: {
                 if let space = space, !space.isDefaultSpace {
                     deleteButton
+                    addToAnotherSpaceButton
                 }
 
                 openAllURLsButton

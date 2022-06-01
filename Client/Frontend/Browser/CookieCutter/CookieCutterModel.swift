@@ -13,16 +13,18 @@ enum CookieNotices: CaseIterable, Encodable, Decodable {
 
 extension Defaults.Keys {
     static let cookieCutterOnboardingShowed = Defaults.Key<Bool>(
-        "profile.prefkey.cookieCutter.onboardingShowed", default: false)
+        "profile_prefkey_cookieCutter_onboardingShowed", default: false)
+    static let cookieCutterEnabled = Defaults.Key<Bool>(
+        "profile_prefkey_cookieCutter_isEnabled", default: true)
 
     fileprivate static let cookieNotices = Defaults.Key<CookieNotices>(
-        "profile.prefkey.cookieCutter.cookieNotices", default: .declineNonEssential)
+        "profile_prefkey_cookieCutter_cookieNotices", default: .declineNonEssential)
     fileprivate static let marketingCookies = Defaults.Key<Bool>(
-        "profile.prefkey.cookieCutter.allowMarketingCookies", default: false)
+        "profile_prefkey_cookieCutter_allowMarketingCookies", default: false)
     fileprivate static let analyticCookies = Defaults.Key<Bool>(
-        "profile.prefkey.cookieCutter.allowAnalyticCookies", default: false)
+        "profile_prefkey_cookieCutter_allowAnalyticCookies", default: false)
     fileprivate static let socialCookies = Defaults.Key<Bool>(
-        "profile.prefkey.cookieCutter.allowSocialCookies", default: false)
+        "profile_prefkey_cookieCutter_allowSocialCookies", default: false)
 }
 
 class CookieCutterModel: ObservableObject {
@@ -43,6 +45,14 @@ class CookieCutterModel: ObservableObject {
         }
     }
     @Published var cookiesBlocked = 0
+
+    @Default(.cookieCutterEnabled) var cookieCutterEnabled {
+        didSet {
+            for tabManager in SceneDelegate.getAllTabManagers() {
+                tabManager.flagAllTabsToReload()
+            }
+        }
+    }
 
     // User selected settings.
     @Default(.marketingCookies) var marketingCookiesAllowed {
@@ -66,10 +76,11 @@ class CookieCutterModel: ObservableObject {
         if !Defaults[.cookieCutterOnboardingShowed] {
             Defaults[.cookieCutterOnboardingShowed] = true
 
-            bvc.showModal(style: OverlayStyle(showTitle: false)) {
+            bvc.showModal(style: OverlayStyle(showTitle: false, expandPopoverWidth: true)) {
                 CookieCutterOnboardingView {
-                    bvc.overlayManager.hideCurrentOverlay(ofPriority: .modal)
-                    bvc.trackingStatsViewModel.showTrackingStatsViewPopover = true
+                    bvc.overlayManager.hideCurrentOverlay(ofPriority: .modal) {
+                        bvc.trackingStatsViewModel.showTrackingStatsViewPopover = true
+                    }
                 } onRemindMeLater: {
                     NotificationPermissionHelper.shared.requestPermissionIfNeeded(
                         from: bvc,

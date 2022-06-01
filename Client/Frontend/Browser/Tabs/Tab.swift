@@ -8,7 +8,6 @@ import Shared
 import Storage
 import SwiftyJSON
 import WebKit
-import XCGLogger
 
 private var debugTabCount = 0
 private let log = Logger.browser
@@ -38,6 +37,11 @@ protocol TabDelegate {
     func tab(_ tab: Tab, didSelectSearchWithNeevaForSelection selection: String)
     @objc optional func tab(_ tab: Tab, didCreateWebView webView: WKWebView)
     @objc optional func tab(_ tab: Tab, willDeleteWebView webView: WKWebView)
+}
+
+enum TimeFilter: String {
+    case today = "Today"
+    case lastWeek = "Last Week"
 }
 
 class Tab: NSObject, ObservableObject {
@@ -87,6 +91,8 @@ class Tab: NSObject, ObservableObject {
     fileprivate var lastRequest: URLRequest?
     var restoring: Bool = false
     var pendingScreenshot = false
+    var needsReloadUponSelect = false
+    var shouldCreateWebViewUponSelect = true
 
     // MARK: Properties mirrored from webView
     @Published private(set) var isLoading = false
@@ -268,7 +274,16 @@ class Tab: NSObject, ObservableObject {
         }
     }
 
-    func createWebview() {
+    /// Creates a `WebView` or checks if the `Tab` should be reloaded.
+    func createWebViewOrReloadIfNeeded() {
+        if !createWebview() && needsReloadUponSelect {
+            reload()
+        }
+
+        shouldCreateWebViewUponSelect = true
+    }
+
+    @discardableResult func createWebview() -> Bool {
         if webView == nil {
             configuration.userContentController = WKUserContentController()
             configuration.allowsInlineMediaPlayback = true
@@ -308,7 +323,11 @@ class Tab: NSObject, ObservableObject {
 
             UserScriptManager.shared.injectUserScriptsIntoTab(self)
             tabDelegate?.tab?(self, didCreateWebView: webView)
+
+            return true
         }
+
+        return false
     }
 
     func addRefreshControl() {
@@ -520,6 +539,8 @@ class Tab: NSObject, ObservableObject {
             print("restoring webView from scratch")
             restore(webView)
         }
+
+        needsReloadUponSelect = false
     }
 
     func getMostRecentQuery(restrictToCurrentNavigation: Bool = false) -> QueryForNavigation.Query?
@@ -649,6 +670,36 @@ class Tab: NSObject, ObservableObject {
             browserViewController?.showAddToSpacesSheet(url: url, title: title, webView: webView)
         }
     }
+
+    func wasLastExecuted(_ byTime: TimeFilter) -> Bool {
+        // The fallback value won't be used. tab.lastExecutedTime is
+        // guaranteed to be non-nil in configureTab()
+        let lastExecutedTime = lastExecutedTime ?? Date.nowMilliseconds()
+        let minusOneDayToCurrentDate =
+            FeatureFlag[.demoteAfter15secondsTimeBasedSwitcher]
+            ? Calendar.current.date(
+                byAdding: .second, value: -15, to: Date())
+            : Calendar.current.date(
+                byAdding: .day, value: -1, to: Date())
+        guard let startOfOneDayAgo = minusOneDayToCurrentDate else {
+            return true
+        }
+        // timeIntervalSince1970 returns the number of seconds. It is converted
+        // to milliseconds by multiplying by 1000 to compare with lastExecutedTime
+        // which is stored in milliseconds.
+        switch byTime {
+        case .today:
+            return lastExecutedTime > Int64(startOfOneDayAgo.timeIntervalSince1970 * 1000)
+        case .lastWeek:
+            let minusOneWeekToCurrentDate = Calendar.current.date(
+                byAdding: .day, value: -7, to: Date())
+            guard let startOfLastWeek = minusOneWeekToCurrentDate else {
+                return true
+            }
+            return lastExecutedTime < Int64(startOfOneDayAgo.timeIntervalSince1970 * 1000)
+                && lastExecutedTime > Int64(startOfLastWeek.timeIntervalSince1970 * 1000)
+        }
+    }
 }
 
 extension Tab: TabWebViewDelegate {
@@ -677,6 +728,12 @@ extension Tab: ContentBlockerTab {
 
     func currentWebView() -> WKWebView? {
         return webView
+    }
+
+    func injectCookieCutterScript(cookieCutterModel: CookieCutterModel) {
+        let cookieCutterHelper = CookieCutterHelper(cookieCutterModel: cookieCutterModel)
+        cookieCutterHelper.currentWebView = webView
+        addContentScript(cookieCutterHelper, name: CookieCutterHelper.name())
     }
 }
 

@@ -12,38 +12,14 @@ class BackForwardListModel: ObservableObject {
     let profile: Profile
     let backForwardList: WKBackForwardList
 
-    @Published var sites = [Site]()
     @Published var currentItem: WKBackForwardListItem?
     @Published var listItems = [WKBackForwardListItem]()
 
     var numberOfItems: Int {
-        sites.count
+        listItems.count
     }
 
-    func loadSitesFromProfile() {
-        let sql = profile.favicons as! SQLiteHistory
-        let urls: [String] = listItems.compactMap {
-            guard let internalUrl = InternalURL($0.url) else {
-                return $0.url.absoluteString
-            }
-
-            return internalUrl.extractedUrlParam?.absoluteString
-        }
-
-        sql.getSites(forURLs: urls).uponQueue(.main) { result in
-            guard let results = result.successValue else {
-                return
-            }
-
-            // Add all results into the sites dictionary
-            self.sites = results.compactMap { result in
-                if let site = result { return site }
-                return nil
-            }.reversed()
-        }
-    }
-
-    func homeAndNormalPagesOnly(_ bfList: WKBackForwardList) {
+    func populateListItems(_ bfList: WKBackForwardList) {
         let items =
             bfList.forwardList.reversed() + [bfList.currentItem].compactMap({ $0 })
             + bfList.backList.reversed()
@@ -51,26 +27,19 @@ class BackForwardListModel: ObservableObject {
         // error url's are OK as they are used to populate history on session restore.
         listItems = items.filter {
             guard let internalUrl = InternalURL($0.url) else { return true }
-
             if let url = internalUrl.originalURLFromErrorPage, InternalURL.isValid(url: url) {
                 return false
             }
-
             return true
         }
-    }
-
-    func loadSites(_ bfList: WKBackForwardList) {
-        currentItem = bfList.currentItem
-        homeAndNormalPagesOnly(bfList)
     }
 
     init(profile: Profile, backForwardList: WKBackForwardList) {
         self.profile = profile
         self.backForwardList = backForwardList
+        self.currentItem = backForwardList.currentItem
 
-        loadSites(backForwardList)
-        loadSitesFromProfile()
+        populateListItems(backForwardList)
     }
 }
 
@@ -81,73 +50,106 @@ struct BackForwardListView: View {
     var overlayManager: OverlayManager
     var navigationClicked: (WKBackForwardListItem) -> Void
 
+    @State var contentHeight: CGFloat = 0
+
     var content: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(model.sites.enumerated()), id: \.0) { index, item in
-                Button {
-                    if item.url.absoluteString != model.currentItem?.url.absoluteString {
-                        navigationClicked(model.listItems[index])
-                    }
-
-                    overlayManager.hideCurrentOverlay()
-                } label: {
-                    HStack {
-                        FaviconView(forSite: item)
-                            .cornerRadius(3)
-                            .padding(4)
-                            .frame(width: faviconWidth)
-
-                        if item.url.absoluteString == model.currentItem?.url.absoluteString {
-                            Text(item.title.isEmpty ? item.url.absoluteString : item.title)
-                                .bold()
-                                .withFont(.bodySmall)
-                                .foregroundColor(.label)
-                        } else {
-                            Text(item.title.isEmpty ? item.url.absoluteString : item.title)
-                                .withFont(.bodySmall)
-                                .foregroundColor(.label)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(model.listItems.enumerated()), id: \.0) { index, item in
+                    let url: URL = {
+                        guard let internalUrl = InternalURL(item.url) else {
+                            return item.url
                         }
 
-                        Spacer()
-                    }.padding(10)
-                }.buttonStyle(.tableCell)
+                        return internalUrl.extractedUrlParam ?? item.url
+                    }()
 
-                if index < model.numberOfItems - 1 {
-                    Color.gray
-                        .frame(width: 2, height: 20)
-                        .padding(.leading, 10 + (faviconWidth / 2) - 1)
-                        .padding(.vertical, -8)
-                        .zIndex(1)
+                    let title: String = {
+                        guard let title = item.title else {
+                            return url.absoluteString
+                        }
+
+                        return title.isEmpty ? url.absoluteString : title
+                    }()
+
+                    VStack(alignment: .leading) {
+                        Button {
+                            if item.url.absoluteString != model.currentItem?.url.absoluteString {
+                                navigationClicked(model.listItems[index])
+                            }
+
+                            overlayManager.hideCurrentOverlay()
+                        } label: {
+                            HStack {
+                                FaviconView(forSiteUrl: url)
+                                    .cornerRadius(3)
+                                    .padding(4)
+                                    .frame(width: faviconWidth)
+
+                                if item.url.absoluteString == model.currentItem?.url.absoluteString
+                                {
+                                    Text(title)
+                                        .bold()
+                                        .withFont(.bodySmall)
+                                        .foregroundColor(.label)
+                                } else {
+                                    Text(title)
+                                        .withFont(.bodySmall)
+                                        .foregroundColor(.label)
+                                }
+
+                                Spacer()
+                            }.padding(10)
+                        }
+                        .buttonStyle(.tableCell)
+                        .accessibilityIdentifier("backForwardListItem-\(title)")
+
+                        if index < model.numberOfItems - 1 {
+                            Color.gray
+                                .frame(width: 2, height: 20)
+                                .padding(.leading, 10 + (faviconWidth / 2) - 1)
+                                .padding(.vertical, -8)
+                                .zIndex(1)
+                        }
+                    }.onHeightOfViewChanged { height in
+                        contentHeight += height
+                    }
                 }
             }
         }
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            DismissBackgroundView(opacity: 0.1) {
-                overlayManager.hideCurrentOverlay()
-            }.animation(nil)
+        GeometryReader { geom in
+            let maxHeight: CGFloat = {
+                // 60 is the minimum amount of padding between the top of the view,
+                // and the top of the BackForwardListView so that the user can tap to close.
+                // Fictional number which can be modified as needed.
+                geom.size.height - 60
+            }()
 
-            if #available(iOS 15.0, *) {
-                ScrollView {
-                    content
+            VStack(spacing: 0) {
+                DismissBackgroundView(opacity: 0.2) {
+                    overlayManager.hideCurrentOverlay()
                 }
-                .background(.regularMaterial)
-                .fixedSize(horizontal: false, vertical: true)
-            } else {
-                ScrollView {
-                    content
-                }
-                .background(Color.DefaultBackground)
-                .fixedSize(horizontal: false, vertical: true)
+                .animation(nil)
+                .transition(.fade)
+
+                Group {
+                    if #available(iOS 15.0, *) {
+                        content.background(.regularMaterial)
+                    } else {
+                        content.background(Color.DefaultBackground)
+                    }
+                }.frame(height: min(maxHeight, contentHeight))
             }
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .contain)
+            .accessibilityAction(.escape) {
+                overlayManager.hideCurrentOverlay()
+            }
+            .accessibilityAddTraits(.isModal)
+            .accessibilityLabel(Text("Back/Forward List"))
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .contain)
-        .accessibilityAction(.escape) {
-            overlayManager.hideCurrentOverlay()
-        }
-        .accessibilityAddTraits(.isModal)
     }
 }

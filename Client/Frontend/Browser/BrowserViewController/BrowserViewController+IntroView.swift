@@ -17,6 +17,11 @@ extension BrowserViewController {
         completion: (() -> Void)? = nil,
         onDismiss: (() -> Void)? = nil
     ) {
+        // Confirm a introView isn't already visible.
+        guard !introViewModel.isDisplaying else {
+            return
+        }
+
         if alwaysShow || !Defaults[.introSeen] {
             showProperIntroVC(
                 signInMode: signInMode,
@@ -110,60 +115,67 @@ extension BrowserViewController {
             }
         }
     }
-
-    private func introVCPresentHelper(
-        introViewController: UIViewController, completion: (() -> Void)?
-    ) {
-        // On iPad we present it modally in a controller
-        if traitCollection.horizontalSizeClass == .regular
-            && traitCollection.verticalSizeClass == .regular
-        {
-            introViewController.preferredContentSize = CGSize(width: 375, height: 667)
-            introViewController.modalPresentationStyle = .formSheet
-        } else {
-            introViewController.modalPresentationStyle = .fullScreen
-        }
-        present(introViewController, animated: true, completion: completion)
-    }
 }
 
 // MARK: - Default Browser
 extension BrowserViewController {
-    func presentDefaultBrowserFirstRun(isInDefaultBrowserEnhancementExp: Bool = false) {
-        // TODO: refactor the logic into view model
+    func presentDefaultBrowserFirstRun() {
+        let changeButtonArm = NeevaExperiment.startExperiment(for: .defaultBrowserChangeButton)
+        NeevaExperiment.logStartExperiment(for: .defaultBrowserChangeButton)
+        let interstitialModel = InterstitialViewModel(
+            inButtonTextExperiment: changeButtonArm == .changeButton,
+            onCloseAction: {
+                self.overlayManager.hideCurrentOverlay()
+            }
+        )
         overlayManager.presentFullScreenModal(
             content: AnyView(
-                DefaultBrowserInterstitialWelcomeScreen(
-                    isInDefaultBrowserEnhancementExp: isInDefaultBrowserEnhancementExp
-                ) {
-                    self.overlayManager.hideCurrentOverlay()
-                } buttonAction: {
-                    if !isInDefaultBrowserEnhancementExp {
-                        self.overlayManager.hideCurrentOverlay()
+                DefaultBrowserInterstitialWelcomeView()
+                    .onAppear {
+                        AppDelegate.setRotationLock(to: .portrait)
                     }
-                }
-                .onAppear {
-                    AppDelegate.setRotationLock(to: .portrait)
-                }
-                .onDisappear {
-                    AppDelegate.setRotationLock(to: .all)
-                }
+                    .onDisappear {
+                        AppDelegate.setRotationLock(to: .all)
+                    }
+                    .environmentObject(interstitialModel)
             )
         ) {
             Defaults[.didShowDefaultBrowserInterstitialFromSkipToBrowser] = true
             Defaults[.introSeen] = true
             Defaults[.firstRunSeenAndNotSignedIn] = true
+            Defaults[.didDismissDefaultBrowserInterstitial] = false
             Defaults[.introSeenDate] = Date()
             ClientLogger.shared.logCounter(
                 .DefaultBrowserInterstitialImp
             )
+        }
+    }
 
-            let arm = NeevaExperiment.startExperiment(for: .notificatonPromptOnAppLaunch)
-            NeevaExperiment.logStartExperiment(for: .notificatonPromptOnAppLaunch)
-
-            if arm == .askForNotificatonPromptOnAppLaunch {
-                NotificationPermissionHelper.shared.requestPermissionIfNeeded(callSite: .appLaunch)
+    func restoreDefaultBrowserFirstRun() {
+        let interstitialModel = InterstitialViewModel(
+            inButtonTextExperiment: NeevaExperiment.arm(for: .defaultBrowserChangeButton)
+                == .changeButton,
+            restoreFromBackground: true,
+            onCloseAction: {
+                self.overlayManager.hideCurrentOverlay()
             }
+        )
+        overlayManager.presentFullScreenModal(
+            content: AnyView(
+                DefaultBrowserInterstitialOnboardingView()
+                    .onAppear {
+                        AppDelegate.setRotationLock(to: .portrait)
+                    }
+                    .onDisappear {
+                        AppDelegate.setRotationLock(to: .all)
+                    }
+                    .environmentObject(interstitialModel)
+            ),
+            animate: false
+        ) {
+            ClientLogger.shared.logCounter(
+                .DefaultBrowserInterstitialRestoreImp
+            )
         }
     }
 

@@ -17,9 +17,9 @@ extension EnvironmentValues {
     }
 }
 
-public enum SettingsPage {
-    case cookieCutter
-    case archivedTabs
+public enum SettingsPage: String {
+    case archivedTabs = "general"
+    case cookieCutter = "privacy"
 }
 
 struct SettingsView: View {
@@ -37,46 +37,58 @@ struct SettingsView: View {
     var body: some View {
         ZStack {
             NavigationView {
-                List {
-                    if NeevaConstants.currentTarget != .xyz {
-                        Section(header: Text("Neeva")) {
-                            NeevaSettingsSection(dismissVC: dismiss, userInfo: .shared)
+                ScrollViewReader { reader in
+                    List {
+                        if NeevaConstants.currentTarget != .xyz {
+                            Section(header: Text("Neeva")) {
+                                NeevaSettingsSection(dismissVC: dismiss, userInfo: .shared)
+                            }.id("neeva-section")
+                        }
+
+                        Section(header: Text("General")) {
+                            GeneralSettingsSection(
+                                showArchivedTabsSettings: openPage == .archivedTabs)
+                        }.id("general-section")
+
+                        if NeevaConstants.currentTarget != .xyz {
+                            Section(header: Text("Appearance")) {
+                                AppearanceSettingsSection()
+                            }.id("appearance-section")
+                        }
+
+                        Section(header: Text("Privacy")) {
+                            PrivacySettingsSection(openCookieCutterPage: openPage == .cookieCutter)
+                        }.id("privacy-section")
+
+                        Section(header: Text("Support")) {
+                            SupportSettingsSection()
+                        }.id("support-section")
+
+                        Section(header: Text("About")) {
+                            AboutSettingsSection(showDebugSettings: $showDebugSettings)
+                        }.id("about-section")
+
+                        if showDebugSettings {
+                            DebugSettingsSection()
                         }
                     }
-
-                    Section(header: Text("General")) {
-                        GeneralSettingsSection(showArchivedTabsSettings: openPage == .archivedTabs)
-                    }
-
-                    Section(header: Text("Privacy")) {
-                        PrivacySettingsSection(openCookieCutterPage: openPage == .cookieCutter)
-                    }
-
-                    Section(header: Text("Support")) {
-                        SupportSettingsSection()
-                    }
-
-                    Section(header: Text("About")) {
-                        AboutSettingsSection(showDebugSettings: $showDebugSettings)
-                    }
-
-                    if showDebugSettings {
-                        DebugSettingsSection()
-                    }
-                }
-                .onDisappear(perform: TourManager.shared.notifyCurrentViewClose)
-                .listStyle(.insetGrouped)
-                .applyToggleStyle()
-                .navigationTitle("Settings")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done", action: dismiss)
-                    }
+                    .listStyle(.insetGrouped)
+                    .applyToggleStyle()
+                    .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done", action: dismiss)
+                        }
+                    }.onAppear {
+                        if let openPage = openPage {
+                            reader.scrollTo("\(openPage.rawValue)-section")
+                        }
+                    }.onDisappear(perform: TourManager.shared.notifyCurrentViewClose)
                 }
             }.navigationViewStyle(.stack)
 
-            OverlayView(limitToOverlayType: [.toast(nil)])
+            OverlayView(limitToOverlayType: [.toast(nil)], isFromBaseView: false)
         }
     }
 }
@@ -100,7 +112,12 @@ struct SettingPreviewWrapper<Content: View>: View {
 }
 
 class SettingsViewController: UIHostingController<AnyView> {
-    init(bvc: BrowserViewController, openPage: SettingsPage? = nil) {
+    private let onDisappear: () -> Void
+
+    init(
+        bvc: BrowserViewController, openPage: SettingsPage? = nil, onDisappear: @escaping () -> Void
+    ) {
+        self.onDisappear = onDisappear
         super.init(rootView: AnyView(EmptyView()))
 
         self.rootView = AnyView(
@@ -138,10 +155,15 @@ class SettingsViewController: UIHostingController<AnyView> {
                 }
             }
             .environmentObject(bvc.browserModel)
+            .environmentObject(bvc.browserModel.cookieCutterModel)
             .environmentObject(bvc.browserModel.scrollingControlModel)
             .environmentObject(bvc.chromeModel)
             .environmentObject(bvc.overlayManager)
         )
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        onDisappear()
     }
 
     @objc required dynamic init?(coder: NSCoder) {

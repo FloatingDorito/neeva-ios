@@ -35,7 +35,9 @@ struct TopBarView: View {
             }
 
             HStack(spacing: chrome.inlineToolbar ? 12 : 0) {
-                if chrome.inlineToolbar && !chrome.isEditingLocation {
+                if Defaults[.didFirstNavigation] && chrome.inlineToolbar
+                    && !chrome.isEditingLocation
+                {
                     Group {
                         TabToolbarButtons.BackButton(
                             weight: .regular,
@@ -74,7 +76,9 @@ struct TopBarView: View {
                 .zIndex(1)
                 .layoutPriority(1)
 
-                if chrome.inlineToolbar && !chrome.isEditingLocation {
+                if Defaults[.didFirstNavigation] && chrome.inlineToolbar
+                    && !chrome.isEditingLocation
+                {
                     Group {
                         TopBarNeevaButton(onMenuAction: onMenuAction)
 
@@ -103,18 +107,20 @@ struct TopBarView: View {
                 }
             }
 
-            ZStack {
-                if let progress = chrome.estimatedProgress {
-                    ProgressView(value: progress)
-                        .progressViewStyle(.pageProgressBar)
-                        .padding(.bottom, -1)
-                        .ignoresSafeArea(edges: .horizontal)
-                        .accessibilityLabel("Page Loading")
+            if !chrome.isEditingLocation {
+                ZStack {
+                    if let progress = chrome.estimatedProgress {
+                        ProgressView(value: progress)
+                            .progressViewStyle(.pageProgressBar)
+                            .padding(.bottom, -1)
+                            .ignoresSafeArea(edges: .horizontal)
+                            .accessibilityLabel("Page Loading")
+                    }
                 }
+                .zIndex(1)
+                .transition(.opacity)
+                .animation(.spring(), value: chrome.estimatedProgress)
             }
-            .zIndex(1)
-            .transition(.opacity)
-            .animation(.spring(), value: chrome.estimatedProgress)
 
             if !UIConstants.enableBottomURLBar {
                 separator

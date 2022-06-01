@@ -167,12 +167,18 @@ class TestAppDelegate: AppDelegate {
 
         if launchArguments.contains(LaunchArguments.ReactivateIntro) {
             Defaults[.introSeen] = false
+            Defaults[.notificationPermissionState] = NotificationPermissionStatus.undecided.rawValue
         }
 
         if launchArguments.contains(LaunchArguments.ForceExperimentControlArm) {
+            // placeholder: add any control experiment arm here if needed
             NeevaExperiment.forceExperimentArm(
-                experiment: .defaultBrowserRemindMeLater,
-                experimentArm: NeevaExperiment.DefaultBrowserRemindMeLater.control.rawValue)
+                experiment: .defaultBrowserChangeButton,
+                experimentArm: NeevaExperiment.DefaultBrowserChangeButton.control.rawValue)
+
+            NeevaExperiment.forceExperimentArm(
+                experiment: .promoCardTypeAfterFirstRun,
+                experimentArm: NeevaExperiment.PromoCardTypeAfterFirstRun.control.rawValue)
         }
 
         // Set signInOnce
@@ -187,6 +193,10 @@ class TestAppDelegate: AppDelegate {
 
         if !launchArguments.contains(LaunchArguments.DontAddTabOnLaunch) {
             BrowserViewController.createNewTabOnStartForTesting = true
+        }
+
+        if launchArguments.contains(LaunchArguments.EnableMockSpaces) {
+            SpaceServiceProvider.shared = SpaceServiceMock()
         }
 
         // Deferred to here in case the ClearProfile argument was set.

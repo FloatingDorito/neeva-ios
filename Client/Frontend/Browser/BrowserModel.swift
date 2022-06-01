@@ -17,7 +17,6 @@ class BrowserModel: ObservableObject {
                 // Ensure that the switcher is reset in case a previous drag was not
                 // properly completed.
                 switcherToolbarModel.dragOffset = nil
-                gridModel.switchModeWithoutAnimation = false
             }
         }
     }
@@ -32,21 +31,27 @@ class BrowserModel: ObservableObject {
     let switcherToolbarModel: SwitcherToolbarModel
     let cookieCutterModel = CookieCutterModel()
 
+    let overlayManager: OverlayManager
     var toastViewManager: ToastViewManager
     var notificationViewManager: NotificationViewManager
 
     func showGridWithAnimation() {
+        gridModel.switchModeWithoutAnimation = true
+
         if gridModel.switcherState != .tabs {
             gridModel.switcherState = .tabs
         }
-        if gridModel.tabCardModel.getAllDetails(matchingIncognitoState: incognitoModel.isIncognito)
-            .isEmpty
+
+        if !gridModel.tabCardModel.getAllDetails(matchingIncognitoState: incognitoModel.isIncognito)
+            .contains(where: \.isSelected)
         {
             showGridWithNoAnimation()
         } else {
             if FeatureFlag[.enableTimeBasedSwitcher] {
                 gridModel.tabCardModel.updateRowsIfNeeded()
             }
+
+            overlayManager.hideCurrentOverlay(ofPriority: .modal)
             gridModel.scrollToSelectedTab { [self] in
                 cardTransitionModel.update(to: .visibleForTrayShow)
                 contentVisibilityModel.update(showContent: false)
@@ -59,12 +64,16 @@ class BrowserModel: ObservableObject {
         if FeatureFlag[.enableTimeBasedSwitcher] {
             gridModel.tabCardModel.updateRowsIfNeeded()
         }
+
         gridModel.scrollToSelectedTab()
         cardTransitionModel.update(to: .hidden)
         contentVisibilityModel.update(showContent: false)
+        overlayManager.hideCurrentOverlay(ofPriority: .modal)
+
         if !showGrid {
             showGrid = true
         }
+
         updateSpaces()
     }
 
@@ -79,14 +88,18 @@ class BrowserModel: ObservableObject {
         }
     }
 
-    func hideGridWithAnimation() {
+    func hideGridWithAnimation(tabToBeSelected: Tab? = nil) {
         assert(!gridModel.tabCardModel.allDetails.isEmpty)
-        if let selectedTab = tabManager.selectedTab,
-            incognitoModel.isIncognito != selectedTab.isIncognito
-        {
+
+        let tabToBeSelected = tabToBeSelected ?? tabManager.selectedTab
+        tabToBeSelected?.shouldCreateWebViewUponSelect = false
+
+        if let tabToBeSelected = tabToBeSelected {
             gridModel.switchModeWithoutAnimation = true
-            incognitoModel.toggle()
+            incognitoModel.update(isIncognito: tabToBeSelected.isIncognito)
         }
+
+        overlayManager.hideCurrentOverlay(ofPriority: .modal)
         gridModel.scrollToSelectedTab { [self] in
             cardTransitionModel.update(to: .visibleForTrayHidden)
             gridModel.closeDetailView()
@@ -101,15 +114,22 @@ class BrowserModel: ObservableObject {
             showGrid = false
         }
 
+        overlayManager.hideCurrentOverlay(ofPriority: .modal)
         contentVisibilityModel.update(showContent: true)
 
         gridModel.switcherState = .tabs
         gridModel.closeDetailView()
+
+        tabManager.updateWebViewForSelectedTab(notify: true)
+        gridModel.switchModeWithoutAnimation = false
     }
 
     func onCompletedCardTransition() {
-        if showGrid {
+        // Prevents a bug where a tab wouldn't open upon select,
+        // since the previous animation wasn't finished yet.
+        if showGrid, cardTransitionModel.state == .visibleForTrayShow {
             cardTransitionModel.update(to: .hidden)
+            gridModel.switchModeWithoutAnimation = false
         } else {
             hideGridWithNoAnimation()
         }
@@ -137,7 +157,7 @@ class BrowserModel: ObservableObject {
 
             if let existingSpace = existingSpace {
                 openSpace(spaceID: existingSpace.id)
-                gridModel.refreshDetailedSpace()
+                existingSpace.refresh()
                 return
             }
 
@@ -169,7 +189,8 @@ class BrowserModel: ObservableObject {
     init(
         gridModel: GridModel, tabManager: TabManager, chromeModel: TabChromeModel,
         incognitoModel: IncognitoModel, switcherToolbarModel: SwitcherToolbarModel,
-        toastViewManager: ToastViewManager, notificationViewManager: NotificationViewManager
+        toastViewManager: ToastViewManager, notificationViewManager: NotificationViewManager,
+        overlayManager: OverlayManager
     ) {
         self.gridModel = gridModel
         self.tabManager = tabManager
@@ -182,5 +203,6 @@ class BrowserModel: ObservableObject {
 
         self.toastViewManager = toastViewManager
         self.notificationViewManager = notificationViewManager
+        self.overlayManager = overlayManager
     }
 }

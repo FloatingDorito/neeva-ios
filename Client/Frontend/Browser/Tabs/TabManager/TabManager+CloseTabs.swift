@@ -9,7 +9,19 @@ private let log = Logger.browser
 
 extension TabManager {
     func removeTab(_ tab: Tab, showToast: Bool = false, updateSelectedTab: Bool = true) {
-        guard let index = tabs.firstIndex(where: { $0 === tab }) else { return }
+        // The index of the removed tab w.r.s to the normalTabs/incognitoTabs is
+        // calculated in advance, and later used for finding rightOrLeftTab. In time-based
+        // switcher, the normalTabs get filtered to make sure we only select tab in
+        // today section.
+        guard
+            let index = tab.isIncognito
+                ? incognitoTabs.firstIndex(where: { $0 == tab })
+                : (FeatureFlag[.enableTimeBasedSwitcher]
+                    ? normalTabs.filter {
+                        $0.wasLastExecuted(.today)
+                    }.firstIndex(where: { $0 == tab })
+                    : normalTabs.firstIndex(where: { $0 == tab }))
+        else { return }
         addTabsToRecentlyClosed([tab], showToast: showToast)
         removeTab(tab, flushToDisk: true, notify: true)
 
@@ -36,7 +48,6 @@ extension TabManager {
         let lastTabIndex = tabs.firstIndex(of: lastTab)
         let tabsToKeep = self.tabs.filter { !tabsToBeRemoved.contains($0) }
         self.tabs = tabsToKeep
-
         if let lastTabIndex = lastTabIndex, updateSelectedTab {
             updateSelectedTabAfterRemovalOf(lastTab, deletedIndex: lastTabIndex, notify: false)
         }
@@ -47,7 +58,6 @@ extension TabManager {
         }
 
         updateTabGroupsAndSendNotifications(notify: true)
-
         sendSelectTabNotifications(previous: previous)
 
         storeChanges()
@@ -82,10 +92,21 @@ extension TabManager {
     private func updateSelectedTabAfterRemovalOf(_ tab: Tab, deletedIndex: Int, notify: Bool) {
         let closedLastNormalTab = !tab.isIncognito && normalTabs.isEmpty
         let closedLastIncognitoTab = tab.isIncognito && incognitoTabs.isEmpty
-        let viableTabs: [Tab] = tab.isIncognito ? incognitoTabs : normalTabs
+        // In time-based switcher, the normalTabs gets filtered to make sure we only
+        // select tab in today section.
+        let viableTabs: [Tab] =
+            tab.isIncognito
+            ? incognitoTabs
+            : (FeatureFlag[.enableTimeBasedSwitcher]
+                ? normalTabs.filter {
+                    $0.wasLastExecuted(.today)
+                } : normalTabs)
         let bvc = SceneDelegate.getBVC(with: scene)
 
-        if closedLastNormalTab || closedLastIncognitoTab {
+        if closedLastNormalTab || closedLastIncognitoTab
+            || (FeatureFlag[.enableTimeBasedSwitcher]
+                ? !viableTabs.contains(where: { $0.wasLastExecuted(.today) }) : false)
+        {
             DispatchQueue.main.async {
                 self.selectTab(nil, notify: notify)
                 bvc.showTabTray()
@@ -103,6 +124,7 @@ extension TabManager {
                 }
             }
         }
+
     }
 
     // MARK: - Remove All Tabs

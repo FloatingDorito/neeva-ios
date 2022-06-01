@@ -26,22 +26,14 @@ struct PopoverView<Content: View>: View {
 
     var body: some View {
         GeometryReader { geo in
-            ZStack {
-                // The semi-transparent backdrop used to shade the content that lies below
-                // the sheet.
-                Button(action: style.nonDismissible ? {} : onDismiss) {
-                    Color.black
-                        .opacity(0.2)
-                        .ignoresSafeArea()
-                }
-                .buttonStyle(.highlightless)
-                .accessibilityHint("Dismiss pop-up window")
-                // make this the last option. This will bring the user’s focus first to the
-                // useful content inside of the overlay sheet rather than the close button.
-                .accessibilitySortPriority(-1)
+            HStack {
+                Spacer()
 
                 VStack {
+                    Spacer()
+
                     SheetHeaderButtonView(headerButton: headerButton, onDismiss: onDismiss)
+                        .padding(.vertical, 12)
 
                     VStack {
                         if style.showTitle, let title = title {
@@ -61,18 +53,21 @@ struct PopoverView<Content: View>: View {
                         Color(style.backgroundColor)
                             .cornerRadius(16)
                     )
-                    // 60 is button height + VStack padding
+                    // 88 is button height + VStack padding + outer padding
                     .frame(
                         minWidth: 400,
                         maxWidth: geo.size.width - (horizontalPadding * 2),
-                        maxHeight: geo.size.height - verticalPadding - 60,
+                        maxHeight: geo.size.height - (verticalPadding * 2) - 88,
                         alignment: .center
-                    )
-                    .fixedSize(horizontal: !style.expandPopoverWidth, vertical: true)
+                    ).fixedSize(horizontal: !style.expandPopoverWidth, vertical: true)
+
+                    Spacer()
                 }
-                .padding(.horizontal, horizontalPadding)
-                .padding(.vertical, verticalPadding)
+
+                Spacer()
             }
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .accessibilityAction(.escape, onDismiss)
         }
     }

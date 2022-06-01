@@ -97,11 +97,13 @@ class BrowserViewController: UIViewController, ModalPresenter {
     lazy var gridModel: GridModel = {
         GridModel(tabManager: tabManager, tabCardModel: tabCardModel)
     }()
+
     lazy var browserModel: BrowserModel = {
         BrowserModel(
             gridModel: gridModel, tabManager: tabManager, chromeModel: chromeModel,
             incognitoModel: incognitoModel, switcherToolbarModel: switcherToolbarModel,
-            toastViewManager: toastViewManager, notificationViewManager: notificationViewManager)
+            toastViewManager: toastViewManager, notificationViewManager: notificationViewManager,
+            overlayManager: overlayManager)
     }()
 
     private lazy var switcherToolbarModel: SwitcherToolbarModel = {
@@ -150,7 +152,10 @@ class BrowserViewController: UIViewController, ModalPresenter {
     var overlayWindowManager: WindowManager?
 
     lazy var introViewModel: IntroViewModel = {
-        IntroViewModel(presentationController: self, overlayManager: overlayManager)
+        IntroViewModel(
+            presentationController: self,
+            overlayManager: overlayManager,
+            toastViewManager: toastViewManager)
     }()
 
     private(set) var readerModeCache: ReaderModeCache
@@ -212,6 +217,11 @@ class BrowserViewController: UIViewController, ModalPresenter {
         super.init(nibName: nil, bundle: nil)
 
         self.tabManager.cookieCutterModel = browserModel.cookieCutterModel
+        self.tabManager.selectedTabPublisher.dropFirst().sink { [weak self] tab in
+            if tab == nil {
+                self?.showTabTray()
+            }
+        }.store(in: &subscriptions)
 
         chromeModel.topBarDelegate = self
         chromeModel.toolbarDelegate = self
@@ -327,10 +337,8 @@ class BrowserViewController: UIViewController, ModalPresenter {
 
         displayedPopoverController?.dismiss(animated: true, completion: nil)
 
-        if tabContainerModel.currentContentUI != .previewHome {
-            coordinator.animate { [self] context in
-                browserModel.scrollingControlModel.showToolbars(animated: false)
-            }
+        coordinator.animate { [self] context in
+            browserModel.scrollingControlModel.showToolbars(animated: false)
         }
     }
 
@@ -389,9 +397,7 @@ class BrowserViewController: UIViewController, ModalPresenter {
             })
 
         // Re-show toolbar which might have been hidden during scrolling (prior to app moving into the background)
-        if tabContainerModel.currentContentUI != .previewHome {
-            browserModel.scrollingControlModel.showToolbars(animated: false)
-        }
+        browserModel.scrollingControlModel.showToolbars(animated: false)
 
         if NeevaUserInfo.shared.isUserLoggedIn {
             DispatchQueue.main.async {
@@ -399,7 +405,7 @@ class BrowserViewController: UIViewController, ModalPresenter {
             }
         }
 
-        if FeatureFlag[.enableSuggestedSpaces] {
+        if NeevaConstants.currentTarget == .client {
             DispatchQueue.main.async {
                 SpaceStore.suggested.refresh()
             }
@@ -515,14 +521,16 @@ class BrowserViewController: UIViewController, ModalPresenter {
             } else if self.tabManager.normalTabs.isEmpty {
                 #if XYZ
                     self.showZeroQuery()
-                    if !Defaults[.walletIntroSeen] {
-                        self.web3Model.showWalletPanel()
-                    }
                 #else
                     if !Defaults[.didFirstNavigation] {
-                        self.showPreviewHome()
+                        self.showZeroQuery()
                     } else {
+                        self.gridModel.switchModeWithoutAnimation = true
                         self.showTabTray()
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            self.gridModel.switchModeWithoutAnimation = false
+                        }
                     }
                 #endif
             }
@@ -532,13 +540,16 @@ class BrowserViewController: UIViewController, ModalPresenter {
     override func viewDidAppear(_ animated: Bool) {
         if NeevaConstants.currentTarget != .xyz {
             if !Defaults[.introSeen] {
-                let arm = NeevaExperiment.startExperiment(for: .defaultBrowserRemindMeLater)
-                presentDefaultBrowserFirstRun(
-                    isInDefaultBrowserEnhancementExp: arm == .isInDefaultBrowserEnhancementExp)
-                NeevaExperiment.logStartExperiment(for: .defaultBrowserRemindMeLater)
+                presentDefaultBrowserFirstRun()
 
                 _ = NeevaExperiment.startExperiment(for: .promoCardTypeAfterFirstRun)
                 NeevaExperiment.logStartExperiment(for: .promoCardTypeAfterFirstRun)
+            } else if let didDismiss = Defaults[.didDismissDefaultBrowserInterstitial],
+                !didDismiss
+                    && !Defaults[.didFirstNavigation]
+                    && NeevaExperiment.arm(for: .defaultBrowserChangeButton) == .changeButton
+            {
+                restoreDefaultBrowserFirstRun()
             }
         }
 
@@ -622,16 +633,7 @@ class BrowserViewController: UIViewController, ModalPresenter {
         DispatchQueue.main.async { [self] in
             tabContainerModel.updateContent(.hideZeroQuery)
             zeroQueryModel.reset(bvc: self, wasCancelled: wasCancelled)
-
-            if tabContainerModel.currentContentUI == .previewHome {
-                browserModel.scrollingControlModel.showToolbars(animated: true)
-            }
         }
-    }
-
-    public func showPreviewHome() {
-        tabContainerModel.updateContent(.showPreviewHome)
-        browserModel.scrollingControlModel.showToolbars(animated: false)
     }
 
     fileprivate func updateInZeroQuery(_ url: URL?) {
@@ -1248,11 +1250,10 @@ extension BrowserViewController: TabDelegate {
             }
         }
 
-        let tabManager = tabManager
+        let tabManager = self.tabManager
 
         // Observers that live as long as the tab. They are all cancelled in Tab/close(),
         // so it is safe to use a strong reference to self.
-
         let estimatedProgressPub = webView.publisher(for: \.estimatedProgress, options: .new)
         let isLoadingPub = webView.publisher(for: \.isLoading, options: .new)
         estimatedProgressPub.combineLatest(isLoadingPub)
@@ -1381,6 +1382,7 @@ extension BrowserViewController: TabDelegate {
         tab.addContentScript(blocker, name: NeevaTabContentBlocker.name())
 
         tab.addContentScript(FocusHelper(tab: tab), name: FocusHelper.name())
+        tab.injectCookieCutterScript(cookieCutterModel: browserModel.cookieCutterModel)
 
         let webuiMessageHelper = WebUIMessageHelper(
             tab: tab,
@@ -1678,23 +1680,18 @@ extension BrowserViewController: ContextMenuHelperDelegate {
         gestureRecognizer: UIGestureRecognizer
     ) {
         BrowserViewController.contextMenuElements = elements
-        let touchPoint = gestureRecognizer.location(in: view)
-        let touchSize = CGSize(width: 0, height: 16)
-
-        let saveImage = UIMenuItem(title: "Save Image", action: #selector(saveImage))
-        let copyImage = UIMenuItem(title: "Copy Image", action: #selector(copyImage))
-        let copyImageLink = UIMenuItem(title: "Copy Image Link", action: #selector(copyImageLink))
-        let addToSpace = UIMenuItem(title: "Add To Space", action: #selector(addImageToSpace))
-        let addToSpaceWithImage = UIMenuItem(
-            title: "Add Page To Space With Image", action: #selector(addToSpaceWithImage))
-
+        let imageContextMenu = ImageContextMenu(elements: elements) { [weak self] action in
+            guard let self = self else { return }
+            switch action {
+            case .saveImage: self.saveImage()
+            case .copyImage: self.copyImage()
+            case .copyImageLink: self.copyImageLink()
+            case .addToSpace: self.addImageToSpace()
+            case .addToSpaceWithImage: self.addToSpaceWithImage()
+            }
+        }
+        present(imageContextMenu, animated: true)
         tabManager.selectedTab?.webView?.stopLoading()
-
-        UIMenuController.shared.menuItems = [
-            saveImage, copyImage, copyImageLink, addToSpace, addToSpaceWithImage,
-        ]
-        UIMenuController.shared.showMenu(
-            from: self.view, rect: CGRect(origin: touchPoint, size: touchSize))
     }
 
     @objc func saveImage() {
@@ -1905,12 +1902,17 @@ extension BrowserViewController {
             }
 
             model?.thumbnailURLCandidates[url] = thumbnailUrls
-
-            self.showAddToSpacesSheet(
-                url: url, title: updater?.title ?? title,
-                description: description ?? updater?.description ?? output?.first?.first,
-                thumbnail: thumbnail,
-                importData: importData, updater: updater)
+            let thumbnailUrl = thumbnailUrls.first(where: {
+                $0.absoluteString.hasSuffix("jpeg") || $0.absoluteString.hasSuffix("jpg")
+                    || $0.absoluteString.hasSuffix("png")
+            })
+            SDWebImageDownloader.shared.downloadImage(with: thumbnailUrl) { image, _, _, _ in
+                self.showAddToSpacesSheet(
+                    url: url, title: updater?.title ?? title,
+                    description: description ?? updater?.description ?? output?.first?.first,
+                    thumbnail: image,
+                    importData: importData, updater: updater)
+            }
         }
     }
 
@@ -1951,6 +1953,19 @@ extension BrowserViewController {
             {
                 ToastDefaults().showToastForAddToSpaceUI(bvc: self, request: request)
             }
+        }
+    }
+
+    func showSpacesLoginRequiredSheet() {
+        self.showModal(style: .withTitle) {
+            SpacesLoginRequiredView()
+                .environment(\.onSigninOrJoinNeeva) {
+                    ClientLogger.shared.logCounter(.SpacesLoginRequired)
+
+                    self.overlayManager.hideCurrentOverlay()
+
+                    self.presentIntroViewController(true)
+                }
         }
     }
 }
@@ -2015,7 +2030,9 @@ extension BrowserViewController {
     }
 
     func showBackForwardList() {
-        guard let backForwardList = tabManager.selectedTab?.webView?.backForwardList else {
+        guard let backForwardList = tabManager.selectedTab?.webView?.backForwardList,
+            backForwardList.all.count > 1
+        else {
             return
         }
 
@@ -2034,7 +2051,10 @@ extension BrowserViewController {
 extension BrowserViewController {
     func openSettings(openPage: SettingsPage? = nil) {
         let action = {
-            let controller = SettingsViewController(bvc: self, openPage: openPage)
+            let controller = SettingsViewController(bvc: self, openPage: openPage) {
+                self.overlayManager.isPresentedViewControllerVisible = false
+            }
+
             self.present(controller, animated: true)
         }
 
@@ -2046,5 +2066,25 @@ extension BrowserViewController {
         } else {
             action()
         }
+
+        overlayManager.isPresentedViewControllerVisible = true
     }
+}
+
+extension BrowserViewController: UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        configurationForMenuAtLocation location: CGPoint
+    )
+        -> UIContextMenuConfiguration?
+    {
+        return UIContextMenuConfiguration(
+            identifier: nil,
+            previewProvider: nil,
+            actionProvider: { _ in
+                let children: [UIMenuElement] = []
+                return UIMenu(title: "", children: children)
+            })
+    }
+
 }

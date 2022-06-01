@@ -192,10 +192,10 @@ struct Card<Details>: View where Details: CardDetails {
     var body: some View {
         GeometryReader { geom in
             VStack(alignment: .center, spacing: 0) {
-                let button = Button(action: {
-                    details.onSelect()
+                let button = Button {
                     selectionCompletion()
-                }) {
+                    details.onSelect()
+                } label: {
                     details.thumbnail
                         .frame(
                             width: max(0, geom.size.width),
@@ -229,8 +229,8 @@ struct Card<Details>: View where Details: CardDetails {
                         .if(!animate) { view in
                             view
                                 .padding(1.5)
+                                .padding(tabDetails.isSelected ? 0 : -1.5)
                                 .contextMenu(menuItems: tabDetails.contextMenu)
-                                .padding(-1.5)
                         }
                 } else {
                     button

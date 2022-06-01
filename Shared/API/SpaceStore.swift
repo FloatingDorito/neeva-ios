@@ -166,10 +166,9 @@ public class Space: Hashable, Identifiable {
 public class SpaceStore: ObservableObject {
     public static var shared = SpaceStore()
     public static var suggested = SpaceStore(
-        suggestedID: "xlvaUJmdPRSrcqRHPEzVPuWf4RP74EyHvz5QvxLN")
+        suggestedID: "RMB2VXVA5vvSSw1tvVG2ShtnkRZE2CqJmzlgqzYb")
 
-    public static var promotionalSpaceId =
-        "-ysvXOiH2HWXsXeN_QaVFzwWEF_ASvtOW_yylJEM"
+    public static var promotionalSpaceId = "-ysvXOiH2HWXsXeN_QaVFzwWEF_ASvtOW_yylJEM"
     public static let dailyDigestID = "spaceDailyDigest"
     public static let dailyDigestSeeMoreID = "\(SpaceStore.dailyDigestID)SeeMore"
 
@@ -203,6 +202,8 @@ public class SpaceStore: ObservableObject {
     public var editableSpaces: [Space] {
         allSpaces.filter { $0.userACL >= .edit }
     }
+
+    @Published public var allProfiles: [Set<String>: [Space]] = [:]
 
     private var disableRefresh = false
 
@@ -250,7 +251,7 @@ public class SpaceStore: ObservableObject {
 
         state = .refreshing
 
-        SpaceListController.getSpaces { result in
+        SpaceServiceProvider.shared.getSpaces { result in
             switch result {
             case .success(let spaces):
                 self.onUpdateSpaces(spaces, force: force)
@@ -305,7 +306,7 @@ public class SpaceStore: ObservableObject {
 
     public static func onRecommendedSpaceSelected(space: Space) {
         shared.allSpaces.append(space)
-        SpacesDataQueryController.getSpacesData(spaceIds: [space.id.id]) { result in
+        SpaceServiceProvider.shared.getSpacesData(spaceIds: [space.id.id]) { result in
             switch result {
             case .success:
                 Logger.browser.info("Space followed")
@@ -324,7 +325,7 @@ public class SpaceStore: ObservableObject {
                 completion(nil)
             }
         } else {
-            SpacesDataQueryController.getSpacesData(spaceIds: [spaceId]) { result in
+            SpaceServiceProvider.shared.getSpacesData(spaceIds: [spaceId]) { result in
                 switch result {
                 case .success(let data):
                     if let model = data.first {
@@ -339,12 +340,26 @@ public class SpaceStore: ObservableObject {
         }
     }
 
-    public func openSpaceWithNoFollow(
+    public func getSpaceDetails(
+        spaceId: String, completion: @escaping (Space) -> Void
+    ) {
+        if let space = allSpaces.first(where: { $0.id.id == spaceId }) {
+            completion(space)
+        } else if let space = allProfiles.first(where: {
+            $0.key.contains(where: { $0 == spaceId })
+        })?.value.first(where: { $0.id.id == spaceId }) {
+            completion(space)
+        } else {
+            openSpaceWithNoFollow(spaceId: spaceId, completion: completion)
+        }
+    }
+
+    private func openSpaceWithNoFollow(
         spaceId: String, completion: @escaping (Space) -> Void
     ) {
         GraphQLAPI.shared.isAnonymous = true
         state = .refreshing
-        SpacesDataQueryController.getSpacesData(spaceIds: [spaceId]) { result in
+        SpaceServiceProvider.shared.getSpacesData(spaceIds: [spaceId]) { result in
             switch result {
             case .success(let data):
                 if let model = data.first {
@@ -362,7 +377,7 @@ public class SpaceStore: ObservableObject {
     }
 
     public static func followSpace(spaceId: String, completion: @escaping () -> Void) {
-        SpacesDataQueryController.getSpacesData(spaceIds: [spaceId]) { result in
+        SpaceServiceProvider.shared.getSpacesData(spaceIds: [spaceId]) { result in
             switch result {
             case .success:
                 Logger.browser.info("Space followed")
@@ -478,7 +493,7 @@ public class SpaceStore: ObservableObject {
     }
 
     private func fetch(spaces spacesToFetch: [Space], beforeReady: (() -> Void)? = nil) {
-        SpacesDataQueryController.getSpacesData(spaceIds: spacesToFetch.map(\.id.value)) {
+        SpaceServiceProvider.shared.getSpacesData(spaceIds: spacesToFetch.map(\.id.value)) {
             result in
             switch result {
             case .success(let spaces):
@@ -651,13 +666,31 @@ public class SpaceStore: ObservableObject {
         return description
     }
 
+    private func getCachedProfile(with spaceID: String) -> [Space]? {
+        if let profile = allProfiles.first(where: { $0.key.contains(where: { $0 == spaceID }) }) {
+            return profile.value
+        }
+        return nil
+    }
+
     public func getRelatedSpaces(
-        with spaceID: String, onCompletion completion: @escaping (Result<[Space], Error>) -> Void
+        with spaceID: String,
+        forceUpdate: Bool = false,
+        onCompletion completion: @escaping (Result<[Space], Error>) -> Void
     ) {
-        RelatedSpacesQueryController.getSpacesData(spaceID: spaceID) { result in
+
+        if !forceUpdate, let cachedProfile = getCachedProfile(with: spaceID) {
+            completion(.success(cachedProfile))
+            return
+        }
+
+        SpaceServiceProvider.shared.getRelatedSpacesData(spaceID: spaceID) { result in
             switch result {
             case .success(let response):
-                completion(.success(response.map({ Space(from: $0) })))
+                let spaces = response.map({ Space(from: $0) })
+                let ids = Set(response.map({ $0.id }))
+                self.allProfiles[ids] = spaces
+                completion(.success(spaces))
             case .failure(let error):
                 completion(.failure(error))
             }
@@ -667,7 +700,12 @@ public class SpaceStore: ObservableObject {
     public func getRelatedSpacesCount(
         with spaceID: String, onCompletion completion: @escaping (Result<Int, Error>) -> Void
     ) {
-        RelatedSpacesCountQueryController.getSpacesData(spaceID: spaceID) { result in
+        if let cachedProfile = getCachedProfile(with: spaceID) {
+            completion(.success(cachedProfile.count))
+            return
+        }
+
+        SpaceServiceProvider.shared.getRelatedSpacesCountData(spaceID: spaceID) { result in
             switch result {
             case .success(let count):
                 completion(.success(count))

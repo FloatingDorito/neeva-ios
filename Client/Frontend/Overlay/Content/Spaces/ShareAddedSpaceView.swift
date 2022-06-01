@@ -54,7 +54,8 @@ struct ShareAddedSpaceView: View {
                             if let id = entity?.id, let space = space {
                                 bvc
                                     .showModal(
-                                        style: .spaces
+                                        style: .spaces,
+                                        toPosition: .top
                                     ) {
                                         AddOrUpdateSpaceContent(
                                             space: space, config: .updateSpaceItem(id)
@@ -136,7 +137,8 @@ struct ShareAddedSpaceView: View {
                     .SaveToSpace,
                     attributes: getLogCounterAttributesForSpaces(
                         details: space == nil
-                            ? nil : SpaceCardDetails(space: space!, manager: SpaceStore.shared)))
+                            ? nil
+                            : SpaceCardDetails(space: space!, manager: SpaceStore.shared)))
 
                 if let space = space {
                     SpaceStore.shared.refreshSpace(spaceID: space.id.id)

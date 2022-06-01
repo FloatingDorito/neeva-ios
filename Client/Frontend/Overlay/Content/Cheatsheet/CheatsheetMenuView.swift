@@ -45,38 +45,6 @@ struct ReviewURLButton: View {
     }
 }
 
-struct RedditBacklinkButton: View {
-    let url: URL
-    let title: String?
-
-    @Environment(\.onOpenURLForCheatsheet) var onOpenURLForCheatsheet
-
-    var body: some View {
-        Button(action: {
-            onOpenURLForCheatsheet(url, String(describing: Self.self))
-        }) {
-            getHostName(title: title)
-        }
-    }
-
-    @ViewBuilder
-    func getHostName(title: String?) -> some View {
-        let lastPath = url.lastPathComponent
-            .replacingOccurrences(of: "/", with: "")
-            .replacingOccurrences(of: "_", with: " ")
-
-        let label = title ?? ""
-
-        HStack {
-            Text(label == "" ? lastPath : label).bold()
-        }
-        .withFont(unkerned: .bodyMedium)
-        .lineLimit(1)
-        .padding(4)
-    }
-
-}
-
 struct CheatsheetNoResultView: View {
     var body: some View {
         VStack(alignment: .center) {
@@ -120,6 +88,26 @@ struct CheatsheetLoadingView: View {
     }
 }
 
+extension NeevaScopeSearch.RichSearchResult {
+    fileprivate var isSearchResult: Bool {
+        switch self {
+        case .WebGroup, .RelatedSearches:
+            return true
+        default:
+            return false
+        }
+    }
+
+    fileprivate var isEntityResult: Bool {
+        switch self {
+        case .ProductCluster, .RecipeBlock, .NewsGroup, .Place, .PlaceList, .RichEntity:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
 public struct CheatsheetMenuView: View {
     @Default(.seenCheatsheetIntro) var seenCheatsheetIntro: Bool
     @Default(.showTryCheatsheetPopover) var defaultShowTryCheatsheetPopover: Bool
@@ -131,6 +119,18 @@ public struct CheatsheetMenuView: View {
 
     @State var height: CGFloat = 0
     @State var openSupport: Bool = false
+
+    private var entityResults: [NeevaScopeSearch.SearchController.RichResult]? {
+        model.searchRichResults?.filter { $0.result.isEntityResult }
+    }
+
+    private var searchResults: [NeevaScopeSearch.SearchController.RichResult]? {
+        model.searchRichResults?.filter { $0.result.isSearchResult }
+    }
+
+    private var ugcDiscussion: UGCDiscussion {
+        UGCDiscussion(backlinks: model.cheatsheetInfo?.backlinkURL)
+    }
 
     private let menuAction: (OverflowMenuAction) -> Void
 
@@ -251,18 +251,31 @@ public struct CheatsheetMenuView: View {
                 recipeView
             }
 
-            if let richResults = model.searchRichResults {
+            if let entityResults = entityResults {
                 VStack(alignment: .leading) {
-                    ForEach(richResults) { richResult in
+                    ForEach(entityResults) { richResult in
                         renderRichResult(for: richResult)
                     }
                 }
             }
-            if NeevaFeatureFlags[.enableBacklink] {
-                redditBacklinkSession
+
+            if NeevaFeatureFlags[.enableBacklink],
+                !ugcDiscussion.isEmpty
+            {
+                UGCDiscussionView(ugcDiscussion)
             }
+
             priceHistorySection
             reviewURLSection
+
+            if let searchResults = searchResults {
+                VStack(alignment: .leading) {
+                    ForEach(searchResults) { richResult in
+                        renderRichResult(for: richResult)
+                    }
+                }
+            }
+
             memorizedQuerySection
 
             Divider()
@@ -377,24 +390,6 @@ public struct CheatsheetMenuView: View {
             }
         case .RichEntity(result: let richEntityResult):
             KnowledgeCardView(richEntity: richEntityResult)
-        }
-    }
-
-    @ViewBuilder
-    var redditBacklinkSession: some View {
-        if let backlinks = model.cheatsheetInfo?.backlinkURL, backlinks.count > 0 {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("From Reddit").withFont(.headingMedium)
-                ForEach(0..<backlinks.count) { index in
-                    if let urlContent = backlinks[index].url,
-                        let url = URL(string: urlContent)
-                    {
-                        // construct reddit link
-                        RedditBacklinkButton(url: url, title: backlinks[index].title)
-                    }
-                }
-            }
-            .padding()
         }
     }
 

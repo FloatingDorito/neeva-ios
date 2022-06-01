@@ -7,29 +7,41 @@ import SwiftUI
 /// Vague categories of Overlay types.
 /// For specific views, use `OverlayType`.
 enum OverlayPriority {
-    case transient
-    case modal
     case fullScreen
+    case modal
+    case sheet
+    case transient
 }
 
 /// Specific Overlay view type.
 enum OverlayType: Equatable {
     case backForwardList(BackForwardListView?)
-    case findInPage(FindInPageView?)
+    case find(FindView?)
     case fullScreenModal(AnyView)
     case notification(NotificationRow?)
     case popover(PopoverRootView?)
     case sheet(OverlaySheetRootView?)
     case toast(ToastView?)
 
-    var priority: OverlayPriority {
+    func isPriority(_ priority: OverlayPriority) -> Bool {
         switch self {
-        case .fullScreenModal:
-            return .fullScreen
-        case .backForwardList, .findInPage, .popover, .sheet:
-            return .modal
+        case .backForwardList, .find, .fullScreenModal:
+            return priority == .modal
+        case .popover, .sheet:
+            return priority == .modal || priority == .sheet
         case .notification, .toast:
-            return .transient
+            return priority == .transient
+        }
+    }
+
+    func isPriority(_ priorities: [OverlayPriority]) -> Bool {
+        switch self {
+        case .backForwardList, .find, .fullScreenModal:
+            return priorities.contains(.modal)
+        case .popover, .sheet:
+            return priorities.contains(.modal) || priorities.contains(.sheet)
+        case .notification, .toast:
+            return priorities.contains(.transient)
         }
     }
 
@@ -37,7 +49,7 @@ enum OverlayType: Equatable {
         switch (lhs, rhs) {
         case (.backForwardList, .backForwardList):
             return true
-        case (.findInPage, .findInPage):
+        case (.find, .find):
             return true
         case (.fullScreenModal, .fullScreenModal):
             return true
@@ -63,6 +75,7 @@ class OverlayManager: ObservableObject {
     @Published var animationCompleted: (() -> Void)? = nil
     @Published var offsetForBottomBar = false
     @Published var hideBottomBar = false
+    @Published var isPresentedViewControllerVisible = false
 
     /// Used to control full screen/popover sheets
     @Published var showFullScreenPopoverSheet = false
@@ -71,14 +84,16 @@ class OverlayManager: ObservableObject {
     /// (Overlay, Animate, Completion])
     var queuedOverlays = [(OverlayType, Bool, (() -> Void)?)]()
 
-    public func presentFullScreenModal(content: AnyView, completion: (() -> Void)? = nil) {
+    public func presentFullScreenModal(
+        content: AnyView, animate: Bool = true, completion: (() -> Void)? = nil
+    ) {
         let content = AnyView(
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
         )
 
-        show(overlay: .fullScreenModal(content), completion: completion)
+        show(overlay: .fullScreenModal(content), animate: animate, completion: completion)
     }
 
     public func show(overlay: OverlayType, animate: Bool = true, completion: (() -> Void)? = nil) {
@@ -87,7 +102,7 @@ class OverlayManager: ObservableObject {
             return
         }
 
-        if overlay.priority == .transient {
+        if overlay.isPriority(.transient) {
             guard currentOverlay == nil else {
                 queuedOverlays.append((overlay, animate, completion))
                 return
@@ -123,7 +138,7 @@ class OverlayManager: ObservableObject {
         }
 
         switch overlay {
-        case .findInPage:
+        case .find:
             hideBottomBar = true
         default:
             hideBottomBar = false
@@ -147,6 +162,8 @@ class OverlayManager: ObservableObject {
                 }
             case .notification:
                 slideAndFadeIn(offset: -ToastViewUX.height)
+            case .sheet:
+                slideAndFadeIn(offset: OverlaySheetUX.animationOffset)
             case .toast:
                 slideAndFadeIn(offset: ToastViewUX.height)
             default:
@@ -155,6 +172,9 @@ class OverlayManager: ObservableObject {
                 }
             }
         } else {
+            if case .fullScreenModal = overlay {
+                showFullScreenPopoverSheet = true
+            }
             displaying = true
         }
 
@@ -211,7 +231,7 @@ class OverlayManager: ObservableObject {
             return
         }
 
-        if let ofPriorities = ofPriorities, !ofPriorities.contains(overlay.priority) {
+        if let ofPriorities = ofPriorities, !overlay.isPriority(ofPriorities) {
             completion?()
             return
         }
@@ -245,9 +265,15 @@ class OverlayManager: ObservableObject {
             }
 
             switch overlay {
-            case .backForwardList, .sheet:
+            case .backForwardList:
                 slideAndFadeOut(offset: 0)
             case .fullScreenModal, .popover:
+                if case .popover = overlay {
+                    withAnimation(animation) {
+                        opacity = 0
+                    }
+                }
+
                 showFullScreenPopoverSheet = false
 
                 // How long it takes for the system sheet to dismiss
@@ -258,6 +284,8 @@ class OverlayManager: ObservableObject {
                 }
             case .notification:
                 slideAndFadeOut(offset: -ToastViewUX.height)
+            case .sheet:
+                slideAndFadeOut(offset: OverlaySheetUX.animationOffset)
             case .toast:
                 slideAndFadeOut(offset: ToastViewUX.height)
             default:
