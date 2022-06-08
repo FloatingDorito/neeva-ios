@@ -10,6 +10,7 @@ public enum FeatureFlag: String, CaseIterable, RawRepresentable {
     // IMPORTANT: when adding a new feature flag, make sure to keep this list
     // in alphabetical order to reduce merge conflicts.
 
+    case animateShrink = "Animate Card Shrink"
     case bottomURLBar = "Bottom URL Bar"
     case cardStrip = "Carousel of cards instead of tab strip"
     case topCardStrip = "Top Card Strip"

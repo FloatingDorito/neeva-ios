@@ -189,13 +189,18 @@ struct Card<Details>: View where Details: CardDetails {
     @EnvironmentObject var cardTransitionModel: CardTransitionModel
     @State private var isPressed = false
     @State private var showingRemoveSpaceWarning = false
+    @State private var didLongPress = false
 
     var body: some View {
         GeometryReader { geom in
             VStack(alignment: .center, spacing: 0) {
                 let button = Button {
-                    selectionCompletion()
-                    details.onSelect()
+                    if !self.didLongPress {
+                        DispatchQueue.main.async {
+                            selectionCompletion()
+                            details.onSelect()
+                        }
+                    }
                 } label: {
                     details.thumbnail
                         .frame(
@@ -208,7 +213,7 @@ struct Card<Details>: View where Details: CardDetails {
                         )
                         .clipped()
                         .if(
-                            tabCardDetail != nil && !tabCardDetail!.isChild
+                            !animate && tabCardDetail != nil && !tabCardDetail!.isChild
                                 && !tabCardDetail!.isPinned
                         ) { view in
                             view
@@ -227,7 +232,7 @@ struct Card<Details>: View where Details: CardDetails {
 
                 if let tabDetails = details as? TabCardDetails {
                     button
-                        .if(!animate) { view in
+                        .if(!animate && didLongPress) { view in
                             view
                                 // add padding to all tab grids
                                 .padding(1.5)
@@ -328,6 +333,7 @@ struct Card<Details>: View where Details: CardDetails {
         .if(!animate) { view in
             view
                 .scaleEffect(isPressed ? 0.95 : 1)
+                .animation(FeatureFlag[.animateShrink] ? CardTransitionUX.animation: nil)
         }
     }
 
