@@ -6,7 +6,6 @@ import SwiftUI
 
 struct CardTransitionUX {
     static let animation = Animation.interpolatingSpring(stiffness: 425, damping: 30)
-    static let shrinkAnimation = Animation.interpolatingSpring(stiffness: 200, damping: 100)
 }
 
 struct CardTransitionModifier<Details: CardDetails>: ViewModifier {
