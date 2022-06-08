@@ -198,6 +198,8 @@ struct Card<Details>: View where Details: CardDetails {
             VStack(alignment: .center, spacing: 0) {
                 let button = Button {
                     if !self.didLongPress {
+                        // Need DispatchQueue.main.async to work around a UI bug caused by
+                        // animating scaleEffect.
                         DispatchQueue.main.async {
                             selectionCompletion()
                             details.onSelect()
