@@ -82,12 +82,16 @@
 		203A9385283F221900FA4E73 /* GridPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203A9380283F1E0E00FA4E73 /* GridPicker.swift */; };
 		205132B128208DB0003AAE96 /* SheetHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 205132B028208DB0003AAE96 /* SheetHeader.swift */; };
 		205132B3282093B0003AAE96 /* CookieCutterOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 205132B2282093B0003AAE96 /* CookieCutterOnboardingView.swift */; };
+		2052A697285053E70016B907 /* CookieCutterSafariExtension.js in Resources */ = {isa = PBXBuildFile; fileRef = 2052A696285053E70016B907 /* CookieCutterSafariExtension.js */; };
 		206954A427FF4257000360D6 /* SiteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206954A327FF4257000360D6 /* SiteListView.swift */; };
 		206954A627FF425B000360D6 /* SiteRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206954A527FF425B000360D6 /* SiteRowView.swift */; };
 		206954A827FF449E000360D6 /* RecentlyClosedTabsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206954A727FF449E000360D6 /* RecentlyClosedTabsPanelView.swift */; };
 		206C58AA28448E2E00216F65 /* OrientationDependentStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2034988D2843307C00799544 /* OrientationDependentStack.swift */; };
 		209CD9A327DBF9F20069675C /* TabGroupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209CD9A227DBF9F20069675C /* TabGroupTests.swift */; };
 		20A5D15327F6A43E00DB88FE /* HistoryPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A5D15227F6A43E00DB88FE /* HistoryPanelView.swift */; };
+		20B2DC5928501D870095ED46 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 20B2DC5528501D870095ED46 /* popup.js */; };
+		20B2DC5B28501D870095ED46 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 20B2DC5728501D870095ED46 /* popup.html */; };
+		20B2DC5C28501D870095ED46 /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = 20B2DC5828501D870095ED46 /* popup.css */; };
 		20BB666C2821E0F0001FA7E9 /* ChangeNotificationPreferenceDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BB666B2821E0F0001FA7E9 /* ChangeNotificationPreferenceDialogView.swift */; };
 		20BB666E28220F11001FA7E9 /* ChangeNotificationPreferenceDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BB666B2821E0F0001FA7E9 /* ChangeNotificationPreferenceDialogView.swift */; };
 		20C5B263282D82F400BD35B9 /* CookieCutterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C5B262282D82F400BD35B9 /* CookieCutterTests.swift */; };
@@ -864,9 +868,6 @@
 		66E25066270FDDB30085AA35 /* images in Resources */ = {isa = PBXBuildFile; fileRef = 66E25065270FDDB30085AA35 /* images */; };
 		66E25068270FDDB30085AA35 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 66E25067270FDDB30085AA35 /* manifest.json */; };
 		66E2506C270FDDB30085AA35 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 66E2506B270FDDB30085AA35 /* content.js */; };
-		66E2506E270FDDB30085AA35 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 66E2506D270FDDB30085AA35 /* popup.html */; };
-		66E25070270FDDB30085AA35 /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = 66E2506F270FDDB30085AA35 /* popup.css */; };
-		66E25072270FDDB30085AA35 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 66E25071270FDDB30085AA35 /* popup.js */; };
 		66E25074270FDDB30085AA35 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66E2503F270FDDB30085AA35 /* Assets.xcassets */; };
 		66E26DB126E2F80200EB23D6 /* EditURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E26DB026E2F80200EB23D6 /* EditURLTests.swift */; };
 		66E34CDA2710E83600F30A3D /* LocalNotificiations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E34CD92710E83600F30A3D /* LocalNotificiations.swift */; };
@@ -1957,11 +1958,15 @@
 		203A9382283F1E9C00FA4E73 /* CardGroupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardGroupView.swift; sourceTree = "<group>"; };
 		205132B028208DB0003AAE96 /* SheetHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetHeader.swift; sourceTree = "<group>"; };
 		205132B2282093B0003AAE96 /* CookieCutterOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieCutterOnboardingView.swift; sourceTree = "<group>"; };
+		2052A696285053E70016B907 /* CookieCutterSafariExtension.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = CookieCutterSafariExtension.js; path = Client/Frontend/UserContent/UserScripts/MainFrame/AtDocumentEnd/CookieCutterSafariExtension.js; sourceTree = SOURCE_ROOT; };
 		206954A327FF4257000360D6 /* SiteListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteListView.swift; sourceTree = "<group>"; };
 		206954A527FF425B000360D6 /* SiteRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteRowView.swift; sourceTree = "<group>"; };
 		206954A727FF449E000360D6 /* RecentlyClosedTabsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentlyClosedTabsPanelView.swift; sourceTree = "<group>"; };
 		209CD9A227DBF9F20069675C /* TabGroupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabGroupTests.swift; sourceTree = "<group>"; };
 		20A5D15227F6A43E00DB88FE /* HistoryPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryPanelView.swift; sourceTree = "<group>"; };
+		20B2DC5528501D870095ED46 /* popup.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = popup.js; sourceTree = "<group>"; };
+		20B2DC5728501D870095ED46 /* popup.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = popup.html; sourceTree = "<group>"; };
+		20B2DC5828501D870095ED46 /* popup.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = popup.css; sourceTree = "<group>"; };
 		20BB666B2821E0F0001FA7E9 /* ChangeNotificationPreferenceDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeNotificationPreferenceDialogView.swift; sourceTree = "<group>"; };
 		20C5B262282D82F400BD35B9 /* CookieCutterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieCutterTests.swift; sourceTree = "<group>"; };
 		20D297F5281DAA3B0036DDBA /* ZombieTabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZombieTabTests.swift; sourceTree = "<group>"; };
@@ -2296,9 +2301,6 @@
 		66E25065270FDDB30085AA35 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; path = images; sourceTree = "<group>"; };
 		66E25067270FDDB30085AA35 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
 		66E2506B270FDDB30085AA35 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = content.js; sourceTree = "<group>"; };
-		66E2506D270FDDB30085AA35 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = popup.html; sourceTree = "<group>"; };
-		66E2506F270FDDB30085AA35 /* popup.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = popup.css; sourceTree = "<group>"; };
-		66E25071270FDDB30085AA35 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = popup.js; sourceTree = "<group>"; };
 		66E25073270FDDB30085AA35 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		66E26DB026E2F80200EB23D6 /* EditURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditURLTests.swift; sourceTree = "<group>"; };
 		66E2ED882697C3B400E01010 /* KeyboardShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutTests.swift; sourceTree = "<group>"; };
@@ -3316,6 +3318,17 @@
 			path = History;
 			sourceTree = "<group>";
 		};
+		20B2DC5428501D870095ED46 /* popup */ = {
+			isa = PBXGroup;
+			children = (
+				2052A696285053E70016B907 /* CookieCutterSafariExtension.js */,
+				20B2DC5528501D870095ED46 /* popup.js */,
+				20B2DC5728501D870095ED46 /* popup.html */,
+				20B2DC5828501D870095ED46 /* popup.css */,
+			);
+			path = popup;
+			sourceTree = "<group>";
+		};
 		23ED80FD25C899D700D0E9D5 /* DefaultBrowserOnboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -4009,14 +4022,12 @@
 		66E25062270FDDB30085AA35 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				20B2DC5428501D870095ED46 /* popup */,
 				66E25063270FDDB30085AA35 /* _locales */,
 				66E25065270FDDB30085AA35 /* images */,
 				66E25067270FDDB30085AA35 /* manifest.json */,
 				6614C9F627190617003ACE0E /* background.js */,
 				66E2506B270FDDB30085AA35 /* content.js */,
-				66E2506D270FDDB30085AA35 /* popup.html */,
-				66E2506F270FDDB30085AA35 /* popup.css */,
-				66E25071270FDDB30085AA35 /* popup.js */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -6354,13 +6365,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				6614C9F827191AD5003ACE0E /* background.js in Resources */,
-				66E25070270FDDB30085AA35 /* popup.css in Resources */,
-				66E2506E270FDDB30085AA35 /* popup.html in Resources */,
 				66E25066270FDDB30085AA35 /* images in Resources */,
+				20B2DC5B28501D870095ED46 /* popup.html in Resources */,
+				20B2DC5928501D870095ED46 /* popup.js in Resources */,
 				66E25068270FDDB30085AA35 /* manifest.json in Resources */,
+				20B2DC5C28501D870095ED46 /* popup.css in Resources */,
 				66E25064270FDDB30085AA35 /* _locales in Resources */,
 				66E2506C270FDDB30085AA35 /* content.js in Resources */,
-				66E25072270FDDB30085AA35 /* popup.js in Resources */,
+				2052A697285053E70016B907 /* CookieCutterSafariExtension.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
