@@ -189,6 +189,8 @@ struct Card<Details>: View where Details: CardDetails {
     @EnvironmentObject var cardTransitionModel: CardTransitionModel
     @State private var isPressed = false
     @State private var showingRemoveSpaceWarning = false
+    // This is not doing anything, can't find a way to change this value back when context
+    // menu is dismissed.
     @State private var didLongPress = false
 
     var body: some View {
@@ -333,7 +335,7 @@ struct Card<Details>: View where Details: CardDetails {
         .if(!animate) { view in
             view
                 .scaleEffect(isPressed ? 0.95 : 1)
-                .animation(FeatureFlag[.animateShrink] ? CardTransitionUX.animation: nil)
+                .animation(CardTransitionUX.animation)
         }
     }
 
