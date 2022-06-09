@@ -236,7 +236,8 @@ struct Card<Details>: View where Details: CardDetails {
 
                 if let tabDetails = details as? TabCardDetails {
                     button
-                        .if(!animate) { view in // TODO: utilize didLongPress to hack contextMenu bug?
+                        // TODO: utilize didLongPress to hack around contextMenu bug?
+                        .if(!animate) { view in
                             view
                                 // add padding to all tab grids
                                 .padding(1.5)
