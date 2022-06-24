@@ -5,22 +5,20 @@
 import Shared
 import SwiftUI
 
-struct CompactCard<Details>: View where Details: TabCardDetails {
+struct CardStripCard<Details>: View where Details: TabCardDetails {
     @ObservedObject var details: Details
-    @Environment(\.selectionCompletion) private var selectionCompletion: () -> Void
-    @Environment(\.sizeCategory) var sizeCategory
-    @EnvironmentObject var incognitoModel: IncognitoModel
+
     @EnvironmentObject var browserModel: BrowserModel
+    @EnvironmentObject var incognitoModel: IncognitoModel
+    @Environment(\.sizeCategory) private var sizeCategory
+    @Environment(\.selectionCompletion) private var selectionCompletion: () -> Void
 
     var animate = false
-    @State private var isPressed = false
-    @State var width: CGFloat = 0
+    @State private var width: CGFloat = 0
 
-    private let isTop = FeatureFlag[.topCardStrip]
     private let minimumContentWidthRequirement: CGFloat = 115
     private let squareSize = CardUX.FaviconSize + 1
-
-    var preferredWidth: CGFloat {
+    private var preferredWidth: CGFloat {
         return
             details.title.size(withAttributes: [
                 .font: FontStyle.labelMedium.uiFont(for: sizeCategory)
@@ -45,8 +43,9 @@ struct CompactCard<Details>: View where Details: TabCardDetails {
 
                 if width > minimumContentWidthRequirement {
                     Text(details.title).withFont(.labelMedium)
-                        .frame(alignment: .center)
-                        .padding(.trailing, 5).padding(.vertical, 4).lineLimit(1)
+                        .lineLimit(1)
+                        .padding(.trailing, 5)
+                        .padding(.vertical, 4)
                 }
             }
 
@@ -54,13 +53,14 @@ struct CompactCard<Details>: View where Details: TabCardDetails {
 
             if let image = details.closeButtonImage, width > minimumContentWidthRequirement - 15 {
                 Button(action: details.onClose) {
-                    Image(uiImage: image).resizable().renderingMode(.template)
+                    Image(uiImage: image)
+                        .resizable()
+                        .renderingMode(.template)
                         .foregroundColor(.secondaryLabel)
-                        .padding(6)
+                        .padding(8)
                         .frame(width: CardUX.CloseButtonSize, height: CardUX.CloseButtonSize)
                         .background(Color(UIColor.systemGray6))
                         .clipShape(Circle())
-                        .padding(6)
                         .accessibilityLabel("Close \(details.title)")
                         .opacity(animate && !browserModel.showGrid ? 0 : 1)
                 }
@@ -81,48 +81,16 @@ struct CompactCard<Details>: View where Details: TabCardDetails {
                     .frame(minWidth: details.isSelected ? preferredWidth : CardUX.FaviconSize + 12)
             }
         }
-        .buttonStyle(.reportsPresses(to: $isPressed))
         .padding(.horizontal)
-        .background(
-            GeometryReader { geom in
-                Color.clear
-                    .useEffect(deps: geom.size.width) { _ in
-                        width = geom.size.width
-                    }
-            }
-        )
+        .onWidthOfViewChanged { width in
+            self.width = width
+        }
     }
 
     var body: some View {
-        if isTop {
-            card
-                .background(
-                    details.isSelected
-                        ? Color.DefaultBackground : Color.groupedBackground)
-        } else {
-            card
-                .background(Color.background)
-                .cornerRadius(CardUX.CompactCornerRadius)
-                .modifier(
-                    BorderTreatment(
-                        isSelected: details.isSelected,
-                        thumbnailDrawsHeader: details.thumbnailDrawsHeader,
-                        isIncognito: incognitoModel.isIncognito,
-                        cornerRadius: CardUX.CompactCornerRadius
-                    )
-                )
-        }
-    }
-
-    private struct ActionsModifier: ViewModifier {
-        let close: (() -> Void)?
-
-        func body(content: Content) -> some View {
-            if let close = close {
-                content.accessibilityAction(named: "Close", close)
-            } else {
-                content
-            }
-        }
+        card
+            .background(
+                details.isSelected ? Color.DefaultBackground : Color.groupedBackground
+            ).contextMenu(menuItems: details.contextMenu)
     }
 }

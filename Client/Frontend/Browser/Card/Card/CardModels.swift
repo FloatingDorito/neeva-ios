@@ -129,6 +129,12 @@ class TabCardModel: CardModel {
     }
 
     // Details
+    var todaysDetails: [TabCardDetails] {
+        normalDetails.filter {
+            $0.tab.wasLastExecuted(.today)
+        }
+    }
+
     var normalDetails: [TabCardDetails] {
         allDetails.filter {
             !$0.tab.isIncognito

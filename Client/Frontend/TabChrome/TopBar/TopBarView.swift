@@ -107,11 +107,7 @@ struct TopBarView: View {
             .padding(.bottom, chrome.estimatedProgress == nil ? 0 : -1)
 
             if chrome.showTopCardStrip {
-                GeometryReader { geo in
-                    CardStripContent(
-                        bvc: SceneDelegate.getBVC(with: chrome.topBarDelegate?.tabManager.scene),
-                        width: geo.size.width)
-                }
+                CardStripView()
             }
 
             if !chrome.isEditingLocation {

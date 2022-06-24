@@ -34,8 +34,7 @@ class TabChromeModel: ObservableObject {
     private var spaceRefreshSubscription: AnyCancellable?
 
     var showTopCardStrip: Bool {
-        FeatureFlag[.cardStrip] && FeatureFlag[.topCardStrip] && inlineToolbar
-            && !isEditingLocation
+        FeatureFlag[.cardStrip] && inlineToolbar && !isEditingLocation
     }
 
     var appActiveRefreshSubscription: AnyCancellable? = nil
@@ -91,12 +90,12 @@ class TabChromeModel: ObservableObject {
 
     private var inlineToolbarHeight: CGFloat {
         return UIConstants.TopToolbarHeightWithToolbarButtonsShowing
-            + (showTopCardStrip ? CardControllerUX.Height : 0)
+            + (showTopCardStrip ? CardStripUX.Height : 0)
     }
 
     private var portraitHeight: CGFloat {
         return UIConstants.PortraitToolbarHeight
-            + (showTopCardStrip ? CardControllerUX.Height : 0)
+            + (showTopCardStrip ? CardStripUX.Height : 0)
     }
 
     var topBarHeight: CGFloat {
