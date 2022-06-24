@@ -553,12 +553,10 @@ class Tab: NSObject, ObservableObject {
         }
 
         if let _ = webView?.reloadFromOrigin() {
-            print("reloaded zombified tab from origin")
             return
         }
 
         if let webView = self.webView {
-            print("restoring webView from scratch")
             restore(webView)
         }
 
