@@ -106,6 +106,11 @@
 		20D21E372820C1A800A7C384 /* CookieCutterOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 205132B2282093B0003AAE96 /* CookieCutterOnboardingView.swift */; };
 		20D297F6281DAA3B0036DDBA /* ZombieTabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D297F5281DAA3B0036DDBA /* ZombieTabTests.swift */; };
 		20D86CAB2866D1DD001ED834 /* CardStripModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D86CAA2866D1DD001ED834 /* CardStripModel.swift */; };
+		20D86CAC2866E1DA001ED834 /* CardStripCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217D9B286664BB003EF3A7 /* CardStripCard.swift */; };
+		20D86CAD2866E1DA001ED834 /* CardStripModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D86CAA2866D1DD001ED834 /* CardStripModel.swift */; };
+		20D86CAE2866E1EF001ED834 /* DragAndDropModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217DA228668F88003EF3A7 /* DragAndDropModifier.swift */; };
+		20D86CAF2866E1F2001ED834 /* DragToCloseInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217D9E28666523003EF3A7 /* DragToCloseInteraction.swift */; };
+		20D86CB02866E207001ED834 /* BorderTreatment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217DA028666575003EF3A7 /* BorderTreatment.swift */; };
 		20E51A112819D8BB00394720 /* CookieCutterHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200976842810EA620055A02B /* CookieCutterHelper.swift */; };
 		20ED47CE27F28235002E3ADF /* BrowserViewController+IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20ED47CD27F28235002E3ADF /* BrowserViewController+IntroView.swift */; };
 		20F2889227FD1BA9005A8A79 /* HistoryPanelModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F2889127FD1BA9005A8A79 /* HistoryPanelModel.swift */; };
@@ -7069,6 +7074,7 @@
 				4A42C46327E58487003B9826 /* TestAppDelegate.swift in Sources */,
 				4A42C46427E58487003B9826 /* SuggestionPositionInfo.swift in Sources */,
 				4A42C46527E58487003B9826 /* SupportSettingsSection.swift in Sources */,
+				20D86CAD2866E1DA001ED834 /* CardStripModel.swift in Sources */,
 				4A42C46627E58487003B9826 /* SpaceDetailList.swift in Sources */,
 				2011A43E283D8DC500947E6B /* BrowserViewController+ShowModal.swift in Sources */,
 				4A42C46727E58487003B9826 /* SuggestionsList.swift in Sources */,
@@ -7138,6 +7144,7 @@
 				4A42C49A27E58487003B9826 /* NeevaAccountInfoView.swift in Sources */,
 				4A42C49B27E58487003B9826 /* CollapsableCardGroupView.swift in Sources */,
 				4AB8160F27EBC3040017203D /* Web3Toolbar.swift in Sources */,
+				20D86CAE2866E1EF001ED834 /* DragAndDropModifier.swift in Sources */,
 				E67B0B3228088242008D1CCD /* WalletHeader.swift in Sources */,
 				4A42C49C27E58487003B9826 /* EnvironmentHelper.swift in Sources */,
 				4A42C49D27E58487003B9826 /* ScheduleNotificationView.swift in Sources */,
@@ -7163,6 +7170,7 @@
 				4A42C4AB27E58487003B9826 /* PromoCard.swift in Sources */,
 				4AE5FC6A27ED9492005E6E9A /* ImpressionLoggerModifier.swift in Sources */,
 				4A42C4AC27E58487003B9826 /* NavSuggestion.swift in Sources */,
+				20D86CAF2866E1F2001ED834 /* DragToCloseInteraction.swift in Sources */,
 				4A42C4AE27E58487003B9826 /* RecipeView.swift in Sources */,
 				4A42C4AF27E58487003B9826 /* LogConfig.swift in Sources */,
 				4A42C4B027E58487003B9826 /* OpenInAppOverlayContent.swift in Sources */,
@@ -7317,6 +7325,7 @@
 				4A42C52B27E58487003B9826 /* SpacesIntro.swift in Sources */,
 				203A9385283F221900FA4E73 /* GridPicker.swift in Sources */,
 				4A42C52C27E58487003B9826 /* Tab+ChangeUserAgent.swift in Sources */,
+				20D86CB02866E207001ED834 /* BorderTreatment.swift in Sources */,
 				4A42C52D27E58487003B9826 /* TabToolbarView.swift in Sources */,
 				4A42C52E27E58487003B9826 /* LocationViewModel.swift in Sources */,
 				4A42C52F27E58487003B9826 /* ScrollingControlModel.swift in Sources */,
@@ -7346,6 +7355,7 @@
 				4A42C54127E58487003B9826 /* UIConstants.swift in Sources */,
 				671208D727F147B00084C1C8 /* IntentHelper.swift in Sources */,
 				4A42C54227E58487003B9826 /* CheatsheetOverlayContent.swift in Sources */,
+				20D86CAC2866E1DA001ED834 /* CardStripCard.swift in Sources */,
 				4A42C54327E58487003B9826 /* ContentBlocker+Safelist.swift in Sources */,
 				4A42C54427E58487003B9826 /* PublisherExtensions.swift in Sources */,
 				4A42C54527E58487003B9826 /* Tab.swift in Sources */,
