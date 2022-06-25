@@ -116,6 +116,7 @@
 		20F2889227FD1BA9005A8A79 /* HistoryPanelModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F2889127FD1BA9005A8A79 /* HistoryPanelModel.swift */; };
 		20F2889427FD20B4005A8A79 /* HistoryPanelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F2889327FD20B4005A8A79 /* HistoryPanelViewController.swift */; };
 		20F6FADA28678B44008D15D4 /* CardStripTabGroupCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F6FAD928678B44008D15D4 /* CardStripTabGroupCardView.swift */; };
+		20F6FADB2867C757008D15D4 /* CardStripTabGroupCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F6FAD928678B44008D15D4 /* CardStripTabGroupCardView.swift */; };
 		20FBBE732838822B000F666B /* BackForwardListViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FBBE722838822B000F666B /* BackForwardListViewTests.swift */; };
 		2328616825C9BD3D0015EA47 /* DefaultBrowserOnboarding.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2328616725C9BD3D0015EA47 /* DefaultBrowserOnboarding.xcassets */; };
 		23BEA767251A99ED00A014BF /* NewYorkMedium-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 23BEA766251A99E300A014BF /* NewYorkMedium-Bold.otf */; };
@@ -7265,6 +7266,7 @@
 				4A42C4FD27E58487003B9826 /* NavigationLinkButton.swift in Sources */,
 				4AB8160727EA663A0017203D /* ServerLoggingSettingsView.swift in Sources */,
 				4A42C4FE27E58487003B9826 /* ToastViewManager.swift in Sources */,
+				20F6FADB2867C757008D15D4 /* CardStripTabGroupCardView.swift in Sources */,
 				4A42C4FF27E58487003B9826 /* BrowserModel.swift in Sources */,
 				4AE5FC6B27ED94F7005E6E9A /* CheatsheetInfoView.swift in Sources */,
 				4A42C50027E58487003B9826 /* ZeroQueryContent.swift in Sources */,
