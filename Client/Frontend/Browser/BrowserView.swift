@@ -60,11 +60,7 @@ struct BrowserContentView: View {
             tabContainerContent
                 .opacity(contentVisibilityModel.showContent ? 1 : 0)
                 .accessibilityHidden(!contentVisibilityModel.showContent)
-        }.padding(
-            UIConstants.enableBottomURLBar ? .bottom : .top,
-            topBarHeight
-                - (FeatureFlag[.cardStrip] ? (browserModel.showGrid ? CardStripUX.Height : -8) : 0)
-        )
+        }.padding(.top, topBarHeight)
     }
 }
 
@@ -80,6 +76,7 @@ struct BrowserView: View {
 
     @State var safeArea = EdgeInsets()
     @State var topBarHeight: CGFloat = .zero
+    @State var bottomBarHeight: CGFloat = .zero
     @State var isSettingsVisible = false
 
     // MARK: - Views
@@ -87,7 +84,7 @@ struct BrowserView: View {
         GeometryReader { geom in
             NavigationView {
                 VStack(spacing: 0) {
-                    ZStack {
+                    ZStack(alignment: .top) {
                         // Tab content or CardGrid
                         BrowserContentView(
                             bvc: bvc, cardGrid: CardGrid(geom: geom), topBarHeight: topBarHeight
@@ -96,11 +93,15 @@ struct BrowserView: View {
                         .background(Color.background)
 
                         // Top Bar
-                        BrowserTopBarView(bvc: bvc)
+                        BrowserTopBarView(bvc: bvc).onHeightOfViewChanged { height in
+                            topBarHeight = height
+                        }.fixedSize(horizontal: false, vertical: true)
                     }
 
                     // Bottom Bar
-                    BrowserBottomBarView(bvc: bvc)
+                    BrowserBottomBarView(bvc: bvc).onHeightOfViewChanged { height in
+                        bottomBarHeight = height
+                    }
                 }.keyboardListener(adapt: false) { height in
                     DispatchQueue.main.async {
                         chromeModel.keyboardShowing = height > 0
@@ -108,15 +109,15 @@ struct BrowserView: View {
                 }.navigationBarHidden(true)
             }
             .navigationViewStyle(.stack)
-            .useEffect(deps: geom.safeAreaInsets, chromeModel.topBarHeight) {
-                safeArea, topBarHeight in
+            .useEffect(deps: geom.safeAreaInsets, topBarHeight, bottomBarHeight) {
+                safeArea, topBarHeight, bottomBarHeight in
                 self.safeArea = safeArea
-                self.topBarHeight = topBarHeight
+                self.chromeModel.topBarHeight = topBarHeight
+                self.chromeModel.bottomBarHeight = bottomBarHeight
 
                 browserModel.scrollingControlModel.setHeaderFooterHeight(
-                    header: chromeModel.topBarHeight,
-                    footer: UIConstants.ToolbarHeight
-                        + safeArea.bottom)
+                    header: topBarHeight,
+                    footer: bottomBarHeight + safeArea.bottom)
             }
         }
     }
@@ -141,14 +142,14 @@ struct BrowserView: View {
             }
         )
         .environmentObject(browserModel)
-        .environmentObject(browserModel.incognitoModel)
+        .environmentObject(browserModel.cardStripModel)
         .environmentObject(browserModel.cardTransitionModel)
         .environmentObject(browserModel.contentVisibilityModel)
+        .environmentObject(browserModel.cookieCutterModel)
+        .environmentObject(browserModel.incognitoModel)
         .environmentObject(browserModel.scrollingControlModel)
         .environmentObject(browserModel.switcherToolbarModel)
         .environmentObject(browserModel.toastViewManager)
-        .environmentObject(browserModel.cookieCutterModel)
-        .environmentObject(chromeModel)
         .environmentObject(bvc.gridModel)
         .environmentObject(bvc.gridModel.spaceCardModel)
         .environmentObject(bvc.gridModel.tabCardModel)
@@ -157,6 +158,7 @@ struct BrowserView: View {
         .environmentObject(bvc.tabContainerModel)
         .environmentObject(bvc.web3Model)
         .environmentObject(bvc.web3Model.walletDetailsModel)
+        .environmentObject(chromeModel)
     }
 
     // MARK: - Init

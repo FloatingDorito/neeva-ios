@@ -12,15 +12,15 @@ struct CardStripUX {
 }
 
 struct CardStripView: View {
-    @EnvironmentObject private var model: TabCardModel
+    @EnvironmentObject private var tabCardModel: TabCardModel
     @EnvironmentObject private var scrollingControlModel: ScrollingControlModel
 
     var pinnedDetails: [TabCardDetails] {
-        return model.allDetails.filter { $0.isPinned }
+        return tabCardModel.allDetails.filter { $0.isPinned }
     }
 
     var unpinnedDetails: [TabCardDetails] {
-        return model.todaysDetails.filter { !$0.isPinned }
+        return tabCardModel.todaysDetails.filter { !$0.isPinned }
     }
 
     @ViewBuilder
@@ -48,8 +48,6 @@ struct CardStripView: View {
             .opacity(scrollingControlModel.controlOpacity)
             .frame(height: CardStripUX.Height)
             .frame(maxWidth: .infinity)
-            .environment(\.selectionCompletion) {
-
-            }.background(Color.DefaultBackground)
+            .background(Color.DefaultBackground)
     }
 }

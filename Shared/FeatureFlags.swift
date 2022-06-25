@@ -10,7 +10,6 @@ public enum FeatureFlag: String, CaseIterable, RawRepresentable {
     // IMPORTANT: when adding a new feature flag, make sure to keep this list
     // in alphabetical order to reduce merge conflicts and keep the settings screen
     // simple to scan.
-    case bottomURLBar = "Bottom URL Bar"
     case cardStrip = "Card Strip"
     case cookieCutterRemindMeLater = "Cookie Cutter Remind Me Later"
     case customSearchEngine = "Custom Search Engine"
@@ -24,6 +23,7 @@ public enum FeatureFlag: String, CaseIterable, RawRepresentable {
     case pinToTopSites = "Pin to Top Sites"
     case qrCodeSignIn = "Sign in with QR Code"
     case recommendedSpaces = "Recommended Spaces"
+    case restoreAppUI = "Restore App UI"
     case reverseChronologicalOrdering = "Sort tabs based on reverse chronological ordering"
     case shortenTimeThresholdForArchivingTabs =
         "shorten time threshold for archiving tabs (1 day -> 15 seconds, 7 days -> 30 seconds, 1 month -> 1 minute)"
@@ -31,7 +31,6 @@ public enum FeatureFlag: String, CaseIterable, RawRepresentable {
     case spacify = "Enable button to turn a page into a Space"
     case swipePlusPlus = "Additional forward and back swipe gestures"
     case swipeToCloseTabs = "Swipe to close tabs"
-    case restoreAppUI = "Restore App UI"
 
     public init?(caseName: String) {
         for value in FeatureFlag.allCases where "\(value)" == caseName {

@@ -8,39 +8,32 @@ import Shared
 import SwiftUI
 
 class TabChromeModel: ObservableObject {
-    @Published var canGoBack: Bool
-    @Published var canGoForward: Bool
-    var canReturnToSuggestions: Bool {
-        guard let selectedTab = topBarDelegate?.tabManager.selectedTab,
-            let currentItem = selectedTab.webView?.backForwardList.currentItem
-        else {
-            return false
-        }
-
-        guard let query = selectedTab.queryForNavigation.findQueryFor(navigation: currentItem)
-        else {
-            return false
-        }
-        return query.location == .suggestion
+    enum ReloadButtonState: String {
+        case reload = "Reload"
+        case stop = "Stop"
     }
 
     /// True when the toolbar is inline with the location view
     /// (when in landscape or on iPad)
+    ///  @Published var canGoBack: Bool
+    @Published var canGoBack: Bool
+    @Published var canGoForward: Bool
     @Published var inlineToolbar: Bool
-
+    @Published var estimatedProgress: Double?
+    @Published var showNeevaMenuTourPrompt = false
+    @Published var keyboardShowing = false
+    @Published var topBarHeight: CGFloat = 0
+    @Published var bottomBarHeight: CGFloat = 0
     @Published private(set) var isPage: Bool
     @Published private(set) var isErrorPage: Bool = false
     @Published private(set) var urlInSpace: Bool = false
+    @Published private(set) var isEditingLocation = false
+
     private var spaceRefreshSubscription: AnyCancellable?
-
-    var showTopCardStrip: Bool {
-        FeatureFlag[.cardStrip] && inlineToolbar && !isEditingLocation
-    }
-
-    var appActiveRefreshSubscription: AnyCancellable? = nil
+    private var appActiveRefreshSubscription: AnyCancellable? = nil
     private var subscriptions: Set<AnyCancellable> = []
-
     private var urlSubscription: AnyCancellable?
+
     weak var topBarDelegate: TopBarDelegate? {
         didSet {
             $isEditingLocation
@@ -75,35 +68,23 @@ class TabChromeModel: ObservableObject {
     }
     weak var toolbarDelegate: ToolbarDelegate?
 
-    enum ReloadButtonState: String {
-        case reload = "Reload"
-        case stop = "Stop"
+    var canReturnToSuggestions: Bool {
+        guard let selectedTab = topBarDelegate?.tabManager.selectedTab,
+            let currentItem = selectedTab.webView?.backForwardList.currentItem
+        else {
+            return false
+        }
+
+        guard let query = selectedTab.queryForNavigation.findQueryFor(navigation: currentItem)
+        else {
+            return false
+        }
+        return query.location == .suggestion
     }
+
     var reloadButton: ReloadButtonState {
         estimatedProgress == 1 || estimatedProgress == nil ? .reload : .stop
     }
-    @Published var estimatedProgress: Double?
-
-    @Published private(set) var isEditingLocation = false
-
-    @Published var showNeevaMenuTourPrompt = false
-
-    private var inlineToolbarHeight: CGFloat {
-        return UIConstants.TopToolbarHeightWithToolbarButtonsShowing
-            + (showTopCardStrip ? CardStripUX.Height : 0)
-    }
-
-    private var portraitHeight: CGFloat {
-        return UIConstants.PortraitToolbarHeight
-            + (showTopCardStrip ? CardStripUX.Height : 0)
-    }
-
-    var topBarHeight: CGFloat {
-        return inlineToolbar ? inlineToolbarHeight : portraitHeight
-    }
-
-    @Published var keyboardShowing = false
-    @Published var bottomBarHeight: CGFloat = 0
 
     init(
         canGoBack: Bool = false, canGoForward: Bool = false, isPage: Bool = false,

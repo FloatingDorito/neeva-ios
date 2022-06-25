@@ -20,6 +20,7 @@ struct TopBarView: View {
 
     @State private var shouldInsetHorizontally = false
 
+    @EnvironmentObject private var cardStripModel: CardStripModel
     @EnvironmentObject private var chrome: TabChromeModel
     @EnvironmentObject private var location: LocationViewModel
     @EnvironmentObject private var scrollingControlModel: ScrollingControlModel
@@ -31,10 +32,6 @@ struct TopBarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if UIConstants.enableBottomURLBar {
-                separator.padding(.bottom, chrome.inlineToolbar ? 0 : 3)
-            }
-
             HStack(spacing: chrome.inlineToolbar ? 12 : 0) {
                 if Defaults[.didFirstNavigation] && chrome.inlineToolbar
                     && !chrome.isEditingLocation
@@ -106,7 +103,7 @@ struct TopBarView: View {
             .padding(.horizontal, shouldInsetHorizontally ? 12 : 0)
             .padding(.bottom, chrome.estimatedProgress == nil ? 0 : -1)
 
-            if chrome.showTopCardStrip {
+            if cardStripModel.showCardStrip {
                 CardStripView()
             }
 
@@ -125,9 +122,7 @@ struct TopBarView: View {
                 .animation(.spring(), value: chrome.estimatedProgress)
             }
 
-            if !UIConstants.enableBottomURLBar {
-                separator
-            }
+            separator
         }
         .background(
             GeometryReader { geom in
@@ -141,9 +136,6 @@ struct TopBarView: View {
         .background(Color.DefaultBackground.ignoresSafeArea())
         .accentColor(.label)
         .accessibilityElement(children: .contain)
-        .offset(
-            y: scrollingControlModel.headerTopOffset
-                * (UIConstants.enableBottomURLBar ? -1 : 1)
-        )
+        .offset(y: scrollingControlModel.headerTopOffset)
     }
 }
