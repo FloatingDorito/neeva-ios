@@ -323,10 +323,10 @@ struct TabGroupHeader: View {
                     Text("\(groupDetails.allDetails.count) Tabs")
                 }
 
-                Button(action: {
+                Button {
                     ClientLogger.shared.logCounter(.tabGroupRenameThroughThreeDotMenu)
                     renaming = true
-                }) {
+                } label: {
                     Label("Rename", systemSymbol: .pencil)
                 }
 
@@ -341,10 +341,10 @@ struct TabGroupHeader: View {
                         Label("Close All", systemSymbol: .trash)
                     }
                 } else {
-                    Button(action: {
+                    Button {
                         ClientLogger.shared.logCounter(.tabGroupDeleteThroughThreeDotMenu)
                         deleting = true
-                    }) {
+                    } label: {
                         Label("Close All", systemSymbol: .trash)
                     }
                 }

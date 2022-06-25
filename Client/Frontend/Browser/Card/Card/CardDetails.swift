@@ -243,9 +243,7 @@ public class TabCardDetails: CardDetails, AccessingManagerProvider,
     }
 
     private func interactWithGroupOrPinnedTabs() -> Bool {
-        guard let tabCardModel = Self.dragState?.tabCardModel,
-            let draggingDetail = Self.dragState?.draggingDetail
-        else {
+        guard let tabCardModel = Self.dragState?.tabCardModel else {
             return false
         }
 
@@ -717,15 +715,13 @@ class SiteCardDetails: CardDetails, AccessingManagerProvider {
 
 // TabGroupCardDetails are not to be used for storing data because they can be recreated.
 class TabGroupCardDetails: ObservableObject {
-
     @Default(.tabGroupExpanded) private var tabGroupExpanded: Set<String>
 
     @Published var manager: TabManager
     @Published var isShowingDetails = false
+    @Published var isSelected: Bool = false
 
-    var isSelected: Bool {
-        manager.selectedTab?.rootUUID == id
-    }
+    private var selectedTabListener: AnyCancellable?
 
     var isExpanded: Bool {
         get {
@@ -819,6 +815,11 @@ class TabGroupCardDetails: ObservableObject {
                     manager: manager,
                     isChild: true)
             })
+
+        setIsSelected(selectedTabRootId: tabManager.selectedTab?.rootUUID)
+        selectedTabListener = tabManager.selectedTabPublisher.sink { selectedTab in
+            self.setIsSelected(selectedTabRootId: selectedTab?.rootUUID)
+        }
     }
 
     func onSelect() {
@@ -829,5 +830,9 @@ class TabGroupCardDetails: ObservableObject {
         if let item = manager.getTabGroup(for: id) {
             manager.closeTabGroup(item, showToast: showToast)
         }
+    }
+
+    func setIsSelected(selectedTabRootId: String?) {
+        self.isSelected = selectedTabRootId == self.id
     }
 }

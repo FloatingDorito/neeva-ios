@@ -11,14 +11,16 @@ class CardStripModel: ObservableObject {
     @ObservedObject var tabCardModel: TabCardModel
     @ObservedObject var tabChromeModel: TabChromeModel
 
-    var unpinnedDetails: [TabCardDetails] {
+    @Published var shouldEmbedInScrollView = false
+
+    var rows: [Row] {
         incognitoModel.isIncognito
-            ? tabCardModel.incognitoDetails : tabCardModel.todaysDetails.filter { !$0.isPinned }
+            ? tabCardModel.incognitoRows : tabCardModel.timeBasedNormalRows[.today] ?? []
     }
 
     var showCardStrip: Bool {
         FeatureFlag[.cardStrip] && tabChromeModel.inlineToolbar && !tabChromeModel.isEditingLocation
-            && unpinnedDetails.count > 1
+            && rows.map { $0.cells.count }.reduce(0, +) > 1
     }
 
     init(incognitoModel: IncognitoModel, tabCardModel: TabCardModel, tabChromeModel: TabChromeModel)

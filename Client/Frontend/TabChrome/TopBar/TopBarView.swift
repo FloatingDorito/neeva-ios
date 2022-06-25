@@ -17,6 +17,7 @@ struct TopBarView: View {
     let newTab: () -> Void
     let onCancel: () -> Void
     let onOverflowMenuAction: (OverflowMenuAction, UIView) -> Void
+    var geom: GeometryProxy
 
     @State private var shouldInsetHorizontally = false
 
@@ -104,7 +105,7 @@ struct TopBarView: View {
             .padding(.bottom, chrome.estimatedProgress == nil ? 0 : -1)
 
             if cardStripModel.showCardStrip {
-                CardStripView()
+                CardStripView(containerGeometry: geom.size)
             }
 
             if !chrome.isEditingLocation {

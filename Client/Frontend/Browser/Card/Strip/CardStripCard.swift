@@ -9,14 +9,18 @@ struct CardStripCard<Details>: View where Details: TabCardDetails {
     @ObservedObject var details: Details
 
     @EnvironmentObject var browserModel: BrowserModel
+    @EnvironmentObject var cardStripModel: CardStripModel
     @EnvironmentObject var incognitoModel: IncognitoModel
     @Environment(\.sizeCategory) private var sizeCategory
     @Environment(\.selectionCompletion) private var selectionCompletion: () -> Void
 
-    var animate = false
     @State private var width: CGFloat = 0
 
-    private let minimumContentWidthRequirement: CGFloat = 115
+    var shouldUseCompactUI: Bool {
+        width <= CardStripUX.CardMinimumContentWidthRequirement
+            || (cardStripModel.shouldEmbedInScrollView && !details.isSelected)
+    }
+
     private let squareSize = CardUX.FaviconSize + 1
     private var preferredWidth: CGFloat {
         return
@@ -28,7 +32,7 @@ struct CardStripCard<Details>: View where Details: TabCardDetails {
     @ViewBuilder
     var buttonContent: some View {
         HStack {
-            if width <= minimumContentWidthRequirement {
+            if shouldUseCompactUI {
                 Spacer()
             }
 
@@ -41,8 +45,9 @@ struct CardStripCard<Details>: View where Details: TabCardDetails {
                         .padding(.vertical, 6)
                 }
 
-                if width > minimumContentWidthRequirement {
-                    Text(details.title).withFont(.labelMedium)
+                if !shouldUseCompactUI {
+                    Text(details.title)
+                        .withFont(.labelMedium)
                         .lineLimit(1)
                         .padding(.trailing, 5)
                         .padding(.vertical, 4)
@@ -51,7 +56,9 @@ struct CardStripCard<Details>: View where Details: TabCardDetails {
 
             Spacer()
 
-            if let image = details.closeButtonImage, width > minimumContentWidthRequirement - 15 {
+            if let image = details.closeButtonImage,
+                width > CardStripUX.CardMinimumContentWidthRequirement - 15
+            {
                 Button(action: details.onClose) {
                     Image(uiImage: image)
                         .resizable()
@@ -62,7 +69,6 @@ struct CardStripCard<Details>: View where Details: TabCardDetails {
                         .background(Color(UIColor.systemGray6))
                         .clipShape(Circle())
                         .accessibilityLabel("Close \(details.title)")
-                        .opacity(animate && !browserModel.showGrid ? 0 : 1)
                 }
             }
         }

@@ -93,7 +93,7 @@ struct BrowserView: View {
                         .background(Color.background)
 
                         // Top Bar
-                        BrowserTopBarView(bvc: bvc).onHeightOfViewChanged { height in
+                        BrowserTopBarView(bvc: bvc, geom: geom).onHeightOfViewChanged { height in
                             topBarHeight = height
                         }.fixedSize(horizontal: false, vertical: true)
                     }

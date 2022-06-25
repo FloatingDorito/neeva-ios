@@ -9,43 +9,72 @@ import SwiftUI
 
 struct CardStripUX {
     static let Height: CGFloat = 40
+    static let CardMinimumContentWidthRequirement: CGFloat = 115
 }
 
 struct CardStripView: View {
+    @EnvironmentObject private var gridModel: GridModel
     @EnvironmentObject private var incognitoModel: IncognitoModel
     @EnvironmentObject private var model: CardStripModel
     @EnvironmentObject private var scrollingControlModel: ScrollingControlModel
     @EnvironmentObject private var tabCardModel: TabCardModel
 
+    @State var width: CGFloat = 0
+
+    let containerGeometry: CGSize
     var pinnedDetails: [TabCardDetails] {
         return tabCardModel.allDetails.filter { $0.isPinned }
     }
 
+    var selectedRowId: TabCardModel.Row.ID? {
+        if let row = tabCardModel.getRows(incognito: incognitoModel.isIncognito).first(where: {
+            row in
+            row.cells.contains(where: \.isSelected)
+        }) {
+            return row.id
+        }
+
+        return nil
+    }
+
     @ViewBuilder
     var content: some View {
-        HStack(spacing: 16) {
-            if pinnedDetails.count > 0 {
-                HStack(spacing: 0) {
-                    ForEach(pinnedDetails.indices, id: \.self) { index in
-                        CardStripCard(details: pinnedDetails[index])
-                            .padding(.trailing, pinnedDetails.count - 1 == index ? -16 : 0)
+        HStack(spacing: 0) {
+            ForEach(model.rows) { row in
+                ForEach(Array(row.cells.enumerated()), id: \.0) { index, details in
+                    switch details {
+                    case .tabGroupInline(let groupDetails):
+                        CardStripTabGroupCardView(groupDetails: groupDetails)
+                    case .tabGroupGridRow(let groupDetails, _):
+                        CardStripTabGroupCardView(groupDetails: groupDetails)
+                    case .tab(let tabDetails):
+                        CardStripCard(details: tabDetails)
+                    default:
+                        EmptyView()
                     }
-                }
+                }.id(row.id)
             }
-
-            HStack(spacing: 0) {
-                ForEach(model.unpinnedDetails.indices, id: \.self) { index in
-                    CardStripCard(details: model.unpinnedDetails[index])
-                }
-            }
+        }
+        .opacity(scrollingControlModel.controlOpacity)
+        .frame(height: CardStripUX.Height)
+        .background(Color.DefaultBackground)
+        .useEffect(deps: containerGeometry) { containerGeometry in
+            model.shouldEmbedInScrollView = containerGeometry.width < width
+        }.onWidthOfViewChanged { width in
+            self.width = width
+            model.shouldEmbedInScrollView = containerGeometry.width < width
         }
     }
 
     var body: some View {
-        content
-            .opacity(scrollingControlModel.controlOpacity)
-            .frame(height: CardStripUX.Height)
-            .frame(maxWidth: .infinity)
-            .background(Color.DefaultBackground)
+        if model.shouldEmbedInScrollView {
+            ScrollView(.horizontal, showsIndicators: false) {
+                content.useEffect(deps: gridModel.needsScrollToSelectedTab) { _ in
+                    model.shouldEmbedInScrollView = false
+                }
+            }
+        } else {
+            content
+        }
     }
 }
