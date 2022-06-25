@@ -118,7 +118,7 @@ struct Card<Details>: View where Details: CardDetails {
                                 && !tabCardDetail!.isPinned
                         ) { view in
                             view
-                                .modifier(DragModifier(tabCardDetail: tabCardDetail!))
+                                .modifier(CardDragAndDropModifier(tabCardDetail: tabCardDetail!))
                         }
                         .onDrop(of: ["public.url", "public.text"], delegate: details)
                 }
@@ -193,21 +193,6 @@ struct Card<Details>: View where Details: CardDetails {
             } else {
                 content
             }
-        }
-    }
-
-    private struct DragModifier: ViewModifier {
-        @EnvironmentObject var tabModel: TabCardModel
-        var tabCardDetail: TabCardDetails
-
-        @ViewBuilder
-        func body(content: Content) -> some View {
-            content
-                .onDrag({
-                    TabCardDetails.dragState = TabCardDetails.DragState(
-                        tabCardModel: tabModel, draggingDetail: tabCardDetail)
-                    return NSItemProvider(object: tabCardDetail.id as NSString)
-                })
         }
     }
 

@@ -65,7 +65,6 @@ struct BrowserTopBarView: View {
     var topBar: some View {
         content
             .transition(.opacity)
-            .frame(height: chromeModel.topBarHeight)
     }
 
     var body: some View {

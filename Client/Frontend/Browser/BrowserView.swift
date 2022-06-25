@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import Combine
 import Foundation
 import Shared
 import SwiftUI
@@ -11,7 +12,9 @@ import SwiftUI
 struct BrowserContentView: View {
     let bvc: BrowserViewController
     let cardGrid: CardGrid
+    var topBarHeight: CGFloat
 
+    @EnvironmentObject private var browserModel: BrowserModel
     @EnvironmentObject private var contentVisibilityModel: ContentVisibilityModel
 
     private var tabContainerContent: some View {
@@ -57,7 +60,11 @@ struct BrowserContentView: View {
             tabContainerContent
                 .opacity(contentVisibilityModel.showContent ? 1 : 0)
                 .accessibilityHidden(!contentVisibilityModel.showContent)
-        }
+        }.padding(
+            UIConstants.enableBottomURLBar ? .bottom : .top,
+            topBarHeight
+                - (FeatureFlag[.cardStrip] ? (browserModel.showGrid ? CardStripUX.Height : -8) : 0)
+        )
     }
 }
 
@@ -82,13 +89,11 @@ struct BrowserView: View {
                 VStack(spacing: 0) {
                     ZStack {
                         // Tab content or CardGrid
-                        BrowserContentView(bvc: bvc, cardGrid: CardGrid(geom: geom))
-                            .environment(\.shareURL, bvc.shareURL(url:view:))
-                            .padding(
-                                UIConstants.enableBottomURLBar ? .bottom : .top,
-                                topBarHeight
-                            )
-                            .background(Color.background)
+                        BrowserContentView(
+                            bvc: bvc, cardGrid: CardGrid(geom: geom), topBarHeight: topBarHeight
+                        )
+                        .environment(\.shareURL, bvc.shareURL(url:view:))
+                        .background(Color.background)
 
                         // Top Bar
                         BrowserTopBarView(bvc: bvc)
@@ -96,12 +101,6 @@ struct BrowserView: View {
 
                     // Bottom Bar
                     BrowserBottomBarView(bvc: bvc)
-                }.useEffect(deps: chromeModel.topBarHeight) { _ in
-                    topBarHeight = chromeModel.topBarHeight
-                    browserModel.scrollingControlModel.setHeaderFooterHeight(
-                        header: chromeModel.topBarHeight,
-                        footer: UIConstants.ToolbarHeight
-                            + safeArea.bottom)
                 }.keyboardListener(adapt: false) { height in
                     DispatchQueue.main.async {
                         chromeModel.keyboardShowing = height > 0
@@ -109,8 +108,10 @@ struct BrowserView: View {
                 }.navigationBarHidden(true)
             }
             .navigationViewStyle(.stack)
-            .useEffect(deps: geom.safeAreaInsets) { safeArea in
+            .useEffect(deps: geom.safeAreaInsets, chromeModel.topBarHeight) {
+                safeArea, topBarHeight in
                 self.safeArea = safeArea
+                self.topBarHeight = topBarHeight
 
                 browserModel.scrollingControlModel.setHeaderFooterHeight(
                     header: chromeModel.topBarHeight,

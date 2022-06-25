@@ -77,6 +77,7 @@
 		20217D9C286664BB003EF3A7 /* CardStripCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217D9B286664BB003EF3A7 /* CardStripCard.swift */; };
 		20217D9F28666523003EF3A7 /* DragToCloseInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217D9E28666523003EF3A7 /* DragToCloseInteraction.swift */; };
 		20217DA128666575003EF3A7 /* BorderTreatment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217DA028666575003EF3A7 /* BorderTreatment.swift */; };
+		20217DA328668F88003EF3A7 /* DragAndDropModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20217DA228668F88003EF3A7 /* DragAndDropModifier.swift */; };
 		2026EC1C27F3D2F900817053 /* CookieCutterSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026EC1B27F3D2F900817053 /* CookieCutterSettings.swift */; };
 		2026EC1F27F3E51400817053 /* CookieCutterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026EC1E27F3E51400817053 /* CookieCutterModel.swift */; };
 		2026EC2127F4070900817053 /* NonEssentialCookieSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026EC2027F4070900817053 /* NonEssentialCookieSettings.swift */; };
@@ -1979,6 +1980,7 @@
 		20217D9B286664BB003EF3A7 /* CardStripCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStripCard.swift; sourceTree = "<group>"; };
 		20217D9E28666523003EF3A7 /* DragToCloseInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragToCloseInteraction.swift; sourceTree = "<group>"; };
 		20217DA028666575003EF3A7 /* BorderTreatment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorderTreatment.swift; sourceTree = "<group>"; };
+		20217DA228668F88003EF3A7 /* DragAndDropModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAndDropModifier.swift; sourceTree = "<group>"; };
 		2026EC1B27F3D2F900817053 /* CookieCutterSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieCutterSettings.swift; sourceTree = "<group>"; };
 		2026EC1E27F3E51400817053 /* CookieCutterModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieCutterModel.swift; sourceTree = "<group>"; };
 		2026EC2027F4070900817053 /* NonEssentialCookieSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonEssentialCookieSettings.swift; sourceTree = "<group>"; };
@@ -3332,6 +3334,7 @@
 				203A9382283F1E9C00FA4E73 /* CardGroupView.swift */,
 				C9655DEE26A09A8600925912 /* CardListViews.swift */,
 				4A3D2992268583710082F293 /* CardModels.swift */,
+				20217DA228668F88003EF3A7 /* DragAndDropModifier.swift */,
 				20217D9E28666523003EF3A7 /* DragToCloseInteraction.swift */,
 			);
 			path = Card;
@@ -7869,6 +7872,7 @@
 				1AC43CC32790BAD2000BF750 /* BrowserModel.swift in Sources */,
 				3BB50E201D627539004B33DF /* ZeroQueryContent.swift in Sources */,
 				66FA64C4270E62A5008BAEAD /* ReaderModeBlocklist.swift in Sources */,
+				20217DA328668F88003EF3A7 /* DragAndDropModifier.swift in Sources */,
 				663AFC4E26A25B2300E4C492 /* NSItemProviderExtensions.swift in Sources */,
 				39455F771FC83F430088A22C /* TabEventHandler.swift in Sources */,
 				E975C93827F23A3200945FD3 /* PlaceViews.swift in Sources */,
