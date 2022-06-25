@@ -12,15 +12,13 @@ struct CardStripUX {
 }
 
 struct CardStripView: View {
-    @EnvironmentObject private var tabCardModel: TabCardModel
+    @EnvironmentObject private var incognitoModel: IncognitoModel
+    @EnvironmentObject private var model: CardStripModel
     @EnvironmentObject private var scrollingControlModel: ScrollingControlModel
+    @EnvironmentObject private var tabCardModel: TabCardModel
 
     var pinnedDetails: [TabCardDetails] {
         return tabCardModel.allDetails.filter { $0.isPinned }
-    }
-
-    var unpinnedDetails: [TabCardDetails] {
-        return tabCardModel.todaysDetails.filter { !$0.isPinned }
     }
 
     @ViewBuilder
@@ -36,8 +34,8 @@ struct CardStripView: View {
             }
 
             HStack(spacing: 0) {
-                ForEach(unpinnedDetails.indices, id: \.self) { index in
-                    CardStripCard(details: unpinnedDetails[index])
+                ForEach(model.unpinnedDetails.indices, id: \.self) { index in
+                    CardStripCard(details: model.unpinnedDetails[index])
                 }
             }
         }

@@ -194,7 +194,10 @@ class BrowserModel: ObservableObject {
         overlayManager: OverlayManager
     ) {
         self.cardStripModel = CardStripModel(
-            tabCardModel: gridModel.tabCardModel, tabChromeModel: chromeModel)
+            incognitoModel: incognitoModel,
+            tabCardModel: gridModel.tabCardModel,
+            tabChromeModel: chromeModel
+        )
         self.cardTransitionModel = CardTransitionModel()
         self.contentVisibilityModel = ContentVisibilityModel()
         self.gridModel = gridModel

@@ -7,15 +7,23 @@ import Shared
 import SwiftUI
 
 class CardStripModel: ObservableObject {
+    @ObservedObject var incognitoModel: IncognitoModel
     @ObservedObject var tabCardModel: TabCardModel
     @ObservedObject var tabChromeModel: TabChromeModel
 
-    var showCardStrip: Bool {
-        FeatureFlag[.cardStrip] && tabChromeModel.inlineToolbar && !tabChromeModel.isEditingLocation
-            && tabCardModel.todaysDetails.filter { !$0.isPinned }.count > 1
+    var unpinnedDetails: [TabCardDetails] {
+        incognitoModel.isIncognito
+            ? tabCardModel.incognitoDetails : tabCardModel.todaysDetails.filter { !$0.isPinned }
     }
 
-    init(tabCardModel: TabCardModel, tabChromeModel: TabChromeModel) {
+    var showCardStrip: Bool {
+        FeatureFlag[.cardStrip] && tabChromeModel.inlineToolbar && !tabChromeModel.isEditingLocation
+            && unpinnedDetails.count > 1
+    }
+
+    init(incognitoModel: IncognitoModel, tabCardModel: TabCardModel, tabChromeModel: TabChromeModel)
+    {
+        self.incognitoModel = incognitoModel
         self.tabCardModel = tabCardModel
         self.tabChromeModel = tabChromeModel
     }
