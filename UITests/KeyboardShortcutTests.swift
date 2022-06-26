@@ -159,8 +159,6 @@ class KeyboardShortcutTests: UITestBase {
 
         openMultipleTabs(tester: tester())
         closeAllTabs()
-        tester().waitForAnimationsToFinish()
-
         bvc.restoreTabKeyCommand()
 
         XCTAssert(bvc.tabManager.tabs.count > 1)
