@@ -18,9 +18,16 @@ class CardStripModel: ObservableObject {
             ? tabCardModel.incognitoRows : tabCardModel.timeBasedNormalRows[.today] ?? []
     }
 
+    private var detailCount: Int {
+        incognitoModel.isIncognito
+            ? tabCardModel.incognitoDetails.count
+            : tabCardModel.allDetails.filter { $0.tab.wasLastExecuted(.today) }.count
+    }
+
     var showCardStrip: Bool {
-        FeatureFlag[.cardStrip] && tabChromeModel.inlineToolbar && !tabChromeModel.isEditingLocation
-            && rows.map { $0.cells.count }.reduce(0, +) > 1
+        return FeatureFlag[.cardStrip] && tabChromeModel.inlineToolbar
+            && !tabChromeModel.isEditingLocation
+            && detailCount > 1
     }
 
     init(incognitoModel: IncognitoModel, tabCardModel: TabCardModel, tabChromeModel: TabChromeModel)

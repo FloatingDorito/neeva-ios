@@ -9,9 +9,19 @@ private struct CollapsedCardStripTabGroupCardView: View {
     @ObservedObject var groupDetails: TabGroupCardDetails
 
     @EnvironmentObject var browserModel: BrowserModel
+    @EnvironmentObject var cardStripModel: CardStripModel
     @Environment(\.sizeCategory) private var sizeCategory
 
-    @State private var width: CGFloat = 0
+    @State private var width: CGFloat = 120
+
+    var title: String {
+        groupDetails.title + " & \(groupDetails.allDetails.count - 1) more"
+    }
+
+    var shouldUseCompactUI: Bool {
+        width <= CardStripUX.CardMinimumContentWidthRequirement
+            || (cardStripModel.shouldEmbedInScrollView && !groupDetails.isSelected)
+    }
 
     private let squareSize = CardUX.FaviconSize + 1
     private var preferredWidth: CGFloat {
@@ -19,10 +29,6 @@ private struct CollapsedCardStripTabGroupCardView: View {
             title.size(withAttributes: [
                 .font: FontStyle.labelMedium.uiFont(for: sizeCategory)
             ]).width + CardUX.CloseButtonSize + CardUX.FaviconSize + 45  // miscellaneous padding
-    }
-
-    var title: String {
-        groupDetails.title + " +\(groupDetails.allDetails.count - 1) more"
     }
 
     var content: some View {
@@ -44,7 +50,7 @@ private struct CollapsedCardStripTabGroupCardView: View {
                 }
             }
 
-            if width > CardStripUX.CardMinimumContentWidthRequirement {
+            if !shouldUseCompactUI {
                 Text(title)
                     .withFont(.labelMedium)
                     .lineLimit(1)
