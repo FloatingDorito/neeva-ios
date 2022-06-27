@@ -113,14 +113,10 @@ struct Card<Details>: View where Details: CardDetails {
                             alignment: .top
                         )
                         .clipped()
-                        .if(
-                            tabCardDetail != nil && !tabCardDetail!.isChild
-                                && !tabCardDetail!.isPinned
-                        ) { view in
-                            view
-                                .modifier(CardDragAndDropModifier(tabCardDetail: tabCardDetail!))
-                        }
                         .onDrop(of: ["public.url", "public.text"], delegate: details)
+                        .if(tabCardDetail != nil && !tabCardDetail!.isPinned) {
+                            $0.modifier(CardDragAndDropModifier(tabCardDetail: tabCardDetail!))
+                        }
                 }
                 .buttonStyle(.reportsPresses(to: $isPressed))
                 .cornerRadius(animate && !browserModel.showGrid ? 0 : CardUX.CornerRadius)
