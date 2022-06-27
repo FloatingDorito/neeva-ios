@@ -86,9 +86,7 @@ struct CardStripCard<Details>: View where Details: TabCardDetails {
                 buttonContent
                     .frame(minWidth: details.isSelected ? preferredWidth : CardUX.FaviconSize + 12)
                     .onDrop(of: ["public.url", "public.text"], delegate: details)
-                    .if(!details.isChild) {
-                        $0.modifier(CardDragAndDropModifier(tabCardDetail: details))
-                    }
+                    .modifier(CardDragAndDropModifier(tabCardDetail: details))
             }
         }
         .padding(.horizontal)
