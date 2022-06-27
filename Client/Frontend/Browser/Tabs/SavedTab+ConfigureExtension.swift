@@ -15,8 +15,9 @@ extension SavedTab {
         let currentItem: WKBackForwardListItem! = tab.webView?.backForwardList.currentItem
 
         // Freshly created web views won't have any history entries at all.
-        // If we have no history, abort.
+        // If we have no history, no need to create the SessionData.
         if currentItem != nil {
+            // Here we create the SessionData for the tab and pass that to the SavedTab.
             let navigationList = tab.webView?.backForwardList.all ?? []
             let urls = navigationList.compactMap { $0.url }
             let currentPage = -(tab.webView?.backForwardList.forwardList ?? []).count
