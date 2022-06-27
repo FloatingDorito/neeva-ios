@@ -33,6 +33,10 @@ private struct CollapsedCardStripTabGroupCardView: View {
 
     var content: some View {
         HStack {
+            if shouldUseCompactUI {
+                Spacer()
+            }
+
             ZStack {
                 // An array of the first three favicons, enumerated and reversed.
                 ForEach(
@@ -57,6 +61,8 @@ private struct CollapsedCardStripTabGroupCardView: View {
                     .padding(.trailing, 5)
                     .padding(.vertical, 4)
             }
+
+            Spacer()
         }
     }
 
