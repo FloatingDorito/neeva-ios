@@ -16,6 +16,7 @@ struct BrowserContentView: View {
 
     @EnvironmentObject private var browserModel: BrowserModel
     @EnvironmentObject private var contentVisibilityModel: ContentVisibilityModel
+    @EnvironmentObject private var gridModel: GridModel
 
     private var tabContainerContent: some View {
         TabContainerContent(

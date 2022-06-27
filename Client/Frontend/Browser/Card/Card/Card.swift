@@ -231,9 +231,7 @@ struct Card<Details>: View where Details: CardDetails {
                 }
 
                 if let spaceId = details.item?.id.id {
-                    SpaceStore.followSpace(spaceId: spaceId) {
-                        SpaceStore.shared.refresh()
-                    }
+                    SpaceStore.shared.followSpace(spaceId: spaceId)
                 }
 
             } label: {
@@ -271,7 +269,9 @@ struct Card<Details>: View where Details: CardDetails {
                     view
                         .padding(1.5)
                         .contextMenu {
-                            removeButton
+                            if !(details.item?.isDefaultSpace ?? false) {
+                                removeButton
+                            }
                             pinButton
                         }
                         .actionSheet(isPresented: $showingRemoveSpaceWarning) {
