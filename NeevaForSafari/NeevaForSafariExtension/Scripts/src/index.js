@@ -24,12 +24,13 @@ function runEngine() {
 
     // Tell the iOS app to increase the count of cookies handled.
     CookieEngine.incrementCookieStats(async () => {
-        // browser.runtime.sendMessage({ update: "increase-cookie-stats"});
+        browser.runtime.sendMessage({ cookieCutterUpdate: "increase-cookie-stats"});
     });
 
     // Tell the iOS app that a cookie notice has been handled.
     CookieEngine.notifyNoticeHandledOnPage(async () => {
-        // browser.runtime.sendMessage({ update: "cookie-notice-handled"});
+        console.log("Notify notice handled on page");
+        browser.runtime.sendMessage({ cookieCutterUpdate: "cookie-notice-handled"});
     });
 
     // Needed if the page is reloaded.
@@ -42,6 +43,7 @@ function runEngine() {
     });
 
     CookieEngine.isTypeEnabled(async (type) => {
+        console.log("isTypeEnabled: " + type);
         switch (type) {
         case CookieCategoryType.Marketing:
         case CookieCategoryType.DoNotSell:
@@ -60,15 +62,18 @@ function runEngine() {
     //
     // TODO: Logging
     CookieEngine.logProviderUsage(async (provider) => {
-        // browser.runtime.sendMessage({ "update": "log-provider-usage", provider: provider });
+        browser.runtime.sendMessage({ "cookieCutterUpdate": "log-provider-usage", provider: provider });
     });
 
     // Run!
     CookieEngine.runCookieCutter();
 
-    // browser.runtime.sendMessage({ "update": "started-running"});
+    console.log("started running");
+    browser.runtime.sendMessage({ "cookieCutterUpdate": "started-running"});
 }
 
-/* browser.runtime.sendMessage({ "update": "get-preferences" }).then((response) => {
+console.log("get prefs");
+browser.runtime.sendMessage({ "cookieCutterUpdate": "get-preferences" }).then((response) => {
+    console.log(response);
     setPreferences(response);
-}); */
+});
