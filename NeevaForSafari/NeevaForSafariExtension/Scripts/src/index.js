@@ -91,5 +91,3 @@ window.addEventListener("cookie-cutter-update-response", function(event) {
         setPreferences(response);
     }
 }, false);
-
-
