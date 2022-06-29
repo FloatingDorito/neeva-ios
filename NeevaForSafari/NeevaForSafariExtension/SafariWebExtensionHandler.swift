@@ -17,6 +17,7 @@ private struct CookieCutterKeys {
 private enum CookieCutterUpdate: String {
     case CookieNoticeHandled = "cookie-notice-handled"
     case GetPreferences = "get-preferences"
+    case FlagSite = "flag-site"
     case IncreaseCookieStats = "increase-cookie-stats"
     case LogProviderUsage = "log-provider-usage"
     case StartedRunning = "started-running"
@@ -66,6 +67,8 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         switch update {
         case .CookieNoticeHandled:
             break
+        case .FlagSite:
+            break
         case .GetPreferences:
             let response = NSExtensionItem()
             response.userInfo = [ SFExtensionMessageKey: [
@@ -73,6 +76,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 CookieCutterKeys.Analytic: defaults.bool(forKey: CookieCutterKeys.Analytic),
                 CookieCutterKeys.Marketing: defaults.bool(forKey: CookieCutterKeys.Marketing),
                 CookieCutterKeys.Social: defaults.bool(forKey: CookieCutterKeys.Social),
+                "isFlagged": defaults.obj
             ]]
             
             context.completeRequest(returningItems: [response]) { _ in
@@ -86,4 +90,10 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             break
         }
     }
+    
+    private func flagSite(domain: String) {
+        
+    }
+    
+    private func isSiteFlagged(
 }

@@ -83,6 +83,8 @@
 		204A9B3D286B85EA00E7E931 /* scripts in Resources */ = {isa = PBXBuildFile; fileRef = 204A9B3C286B85E900E7E931 /* scripts */; };
 		204A9B40286B8A4800E7E931 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 204A9B3F286B8A4800E7E931 /* background.js */; };
 		204A9B41286B8A4800E7E931 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 204A9B3E286B8A4800E7E931 /* content.js */; };
+		204A9B45286BB78400E7E931 /* cookieCutterContentScript.js in Resources */ = {isa = PBXBuildFile; fileRef = 204A9B44286BB78400E7E931 /* cookieCutterContentScript.js */; };
+		204A9B46286BBBB700E7E931 /* cookieCutterContentScript.js in Resources */ = {isa = PBXBuildFile; fileRef = 204A9B44286BB78400E7E931 /* cookieCutterContentScript.js */; };
 		205132B128208DB0003AAE96 /* SheetHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 205132B028208DB0003AAE96 /* SheetHeader.swift */; };
 		205132B3282093B0003AAE96 /* CookieCutterOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 205132B2282093B0003AAE96 /* CookieCutterOnboardingView.swift */; };
 		206954A427FF4257000360D6 /* SiteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206954A327FF4257000360D6 /* SiteListView.swift */; };
@@ -1958,6 +1960,7 @@
 		204A9B3C286B85E900E7E931 /* scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = scripts; sourceTree = "<group>"; };
 		204A9B3E286B8A4800E7E931 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = content.js; sourceTree = "<group>"; };
 		204A9B3F286B8A4800E7E931 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = background.js; sourceTree = "<group>"; };
+		204A9B44286BB78400E7E931 /* cookieCutterContentScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = cookieCutterContentScript.js; sourceTree = "<group>"; };
 		205132B028208DB0003AAE96 /* SheetHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetHeader.swift; sourceTree = "<group>"; };
 		205132B2282093B0003AAE96 /* CookieCutterOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieCutterOnboardingView.swift; sourceTree = "<group>"; };
 		206954A327FF4257000360D6 /* SiteListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteListView.swift; sourceTree = "<group>"; };
@@ -4027,6 +4030,7 @@
 				66E25067270FDDB30085AA35 /* manifest.json */,
 				204A9B3F286B8A4800E7E931 /* background.js */,
 				204A9B3E286B8A4800E7E931 /* content.js */,
+				204A9B44286BB78400E7E931 /* cookieCutterContentScript.js */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -6336,6 +6340,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				204A9B45286BB78400E7E931 /* cookieCutterContentScript.js in Resources */,
 				66879339271929240093FA2B /* NeevaIcon.png in Resources */,
 				66E25030270FDDB20085AA35 /* Main.html in Resources */,
 				661A3955271E48A2002F32F5 /* Main.storyboard in Resources */,
@@ -6362,6 +6367,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				204A9B46286BBBB700E7E931 /* cookieCutterContentScript.js in Resources */,
 				204A9B40286B8A4800E7E931 /* background.js in Resources */,
 				66E25066270FDDB30085AA35 /* images in Resources */,
 				204A9B3D286B85EA00E7E931 /* scripts in Resources */,

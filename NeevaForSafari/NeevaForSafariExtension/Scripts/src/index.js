@@ -3,34 +3,26 @@
 import { CookieCategoryType, CookieEngine } from 'cookie-cutter';
 
 var cookiePreferences = { marketing: false, analytic: false, social: false };
-
-function setPreferences(preferences) {
-    if (preferences["cookieCutterEnabled"]) {
-        cookiePreferences["marketing"] = preferences["marketing"];
-        cookiePreferences["analytic"] = preferences["analytic"];
-        cookiePreferences["social"] = preferences["social"];
-    
-        runEngine();
-    }
-}
+var isFlagged = false;
 
 function runEngine() {
     // Not used by iOS.
-    CookieEngine.flagSite(async () => {});
+    CookieEngine.flagSite(async () => {
+        publishEvent({ cookieCutterUpdate: "flag-site" });
+    });
 
     // These are handled by the iOS app, can return default values.
     CookieEngine.isCookieConsentingEnabled(async () => true);
-    CookieEngine.isFlaggedSite(async () => false);
+    CookieEngine.isFlaggedSite(async () => isFlagged);
 
     // Tell the iOS app to increase the count of cookies handled.
     CookieEngine.incrementCookieStats(async () => {
-        browser.runtime.sendMessage({ cookieCutterUpdate: "increase-cookie-stats"});
+        publishEvent({ cookieCutterUpdate: "increase-cookie-stats" });
     });
 
     // Tell the iOS app that a cookie notice has been handled.
     CookieEngine.notifyNoticeHandledOnPage(async () => {
-        console.log("Notify notice handled on page");
-        browser.runtime.sendMessage({ cookieCutterUpdate: "cookie-notice-handled"});
+        publishEvent({ cookieCutterUpdate: "cookie-notice-handled" });
     });
 
     // Needed if the page is reloaded.
@@ -62,18 +54,40 @@ function runEngine() {
     //
     // TODO: Logging
     CookieEngine.logProviderUsage(async (provider) => {
-        browser.runtime.sendMessage({ "cookieCutterUpdate": "log-provider-usage", provider: provider });
+        publishEvent({ cookieCutterUpdate: "log-provider-usage", provider: provider });
     });
 
     // Run!
     CookieEngine.runCookieCutter();
 
-    console.log("started running");
-    browser.runtime.sendMessage({ "cookieCutterUpdate": "started-running"});
+    publishEvent({ cookieCutterUpdate: "started-running" });
 }
 
-console.log("get prefs");
-browser.runtime.sendMessage({ "cookieCutterUpdate": "get-preferences" }).then((response) => {
-    console.log(response);
-    setPreferences(response);
-});
+function setPreferences(preferences) {
+    isFlagged = preferences["isFlagged"];
+
+    if (preferences["cookieCutterEnabled"]) {
+        cookiePreferences["marketing"] = preferences["marketing"];
+        cookiePreferences["analytic"] = preferences["analytic"];
+        cookiePreferences["social"] = preferences["social"];
+    
+        runEngine();
+    }
+}
+
+function publishEvent(event) {
+    window.dispatchEvent(new CustomEvent("cookie-cutter-update", { detail: event }));
+}
+
+publishEvent({ cookieCutterUpdate: "get-preferences" });
+
+window.addEventListener("cookie-cutter-update-response", function(event) {
+    let data = event.detail
+    let response = data.response;
+
+    if (data.respondingTo == "get-preferences") {
+        setPreferences(response);
+    }
+}, false);
+
+
