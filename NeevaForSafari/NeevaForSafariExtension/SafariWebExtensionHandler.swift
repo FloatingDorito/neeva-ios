@@ -8,6 +8,7 @@ import os.log
 private struct CookieCutterKeys {
     // Global key.
     static let CookieCutter = "cookieCutter"
+    static let FlaggedSites = "cookieCutter.flaggedSites"
     
     static let Analytic = "analytic"
     static let Marketing = "marketing"
@@ -58,17 +59,19 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     
     private func handleCookieCutterUpdate(context: NSExtensionContext, data: [String: Any]) {
         guard let cookieCutterUpdate = data[ExtensionRequests.CookieCutterUpdate.rawValue] as? String,
-                let update = CookieCutterUpdate(rawValue: cookieCutterUpdate) else {
+                let update = CookieCutterUpdate(rawValue: cookieCutterUpdate),
+                let domain = data["domain"] as? String else {
             return
         }
         
         os_log(.default, "Cookie Cutter update received: %{private}@ -- (NEEVA FOR SAFARI)", cookieCutterUpdate)
+        os_log(.default, "Cookie Cutter domain: %{private}@ -- (NEEVA FOR SAFARI)", domain)
         
         switch update {
         case .CookieNoticeHandled:
-            break
+            flagSite(domain: domain)
         case .FlagSite:
-            break
+            flagSite(domain: domain)
         case .GetPreferences:
             let response = NSExtensionItem()
             response.userInfo = [ SFExtensionMessageKey: [
@@ -76,7 +79,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 CookieCutterKeys.Analytic: defaults.bool(forKey: CookieCutterKeys.Analytic),
                 CookieCutterKeys.Marketing: defaults.bool(forKey: CookieCutterKeys.Marketing),
                 CookieCutterKeys.Social: defaults.bool(forKey: CookieCutterKeys.Social),
-                "isFlagged": defaults.obj
+                "isFlagged": isSiteFlagged(domain: domain)
             ]]
             
             context.completeRequest(returningItems: [response]) { _ in
@@ -92,8 +95,14 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     }
     
     private func flagSite(domain: String) {
+        var currentFlagList = defaults.array(forKey: CookieCutterKeys.FlaggedSites) as? [String] ?? []
+        currentFlagList.append(domain)
         
+        defaults.set(currentFlagList, forKey: CookieCutterKeys.FlaggedSites)
     }
     
-    private func isSiteFlagged(
+    private func isSiteFlagged(domain: String) -> Bool {
+        let currentFlagList = defaults.array(forKey: CookieCutterKeys.FlaggedSites) as? [String] ?? []
+        return currentFlagList.contains(domain)
+    }
 }

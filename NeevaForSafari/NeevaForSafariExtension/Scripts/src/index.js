@@ -8,7 +8,7 @@ var isFlagged = false;
 function runEngine() {
     // Not used by iOS.
     CookieEngine.flagSite(async () => {
-        publishEvent({ cookieCutterUpdate: "flag-site" });
+        publishUpdate({ cookieCutterUpdate: "flag-site" });
     });
 
     // These are handled by the iOS app, can return default values.
@@ -17,12 +17,12 @@ function runEngine() {
 
     // Tell the iOS app to increase the count of cookies handled.
     CookieEngine.incrementCookieStats(async () => {
-        publishEvent({ cookieCutterUpdate: "increase-cookie-stats" });
+        publishUpdate({ cookieCutterUpdate: "increase-cookie-stats" });
     });
 
     // Tell the iOS app that a cookie notice has been handled.
     CookieEngine.notifyNoticeHandledOnPage(async () => {
-        publishEvent({ cookieCutterUpdate: "cookie-notice-handled" });
+        publishUpdate({ cookieCutterUpdate: "cookie-notice-handled" });
     });
 
     // Needed if the page is reloaded.
@@ -54,17 +54,19 @@ function runEngine() {
     //
     // TODO: Logging
     CookieEngine.logProviderUsage(async (provider) => {
-        publishEvent({ cookieCutterUpdate: "log-provider-usage", provider: provider });
+        publishUpdate({ cookieCutterUpdate: "log-provider-usage", provider: provider });
     });
 
     // Run!
     CookieEngine.runCookieCutter();
 
-    publishEvent({ cookieCutterUpdate: "started-running" });
+    publishUpdate({ cookieCutterUpdate: "started-running" });
 }
 
 function setPreferences(preferences) {
     isFlagged = preferences["isFlagged"];
+
+    console.log("Is flagged: " + isFlagged);
 
     if (preferences["cookieCutterEnabled"]) {
         cookiePreferences["marketing"] = preferences["marketing"];
@@ -75,11 +77,11 @@ function setPreferences(preferences) {
     }
 }
 
-function publishEvent(event) {
-    window.dispatchEvent(new CustomEvent("cookie-cutter-update", { detail: event }));
+function publishUpdate(update) {
+    window.dispatchEvent(new CustomEvent("cookie-cutter-update", { detail: { update, domain: window.location.host }}));
 }
 
-publishEvent({ cookieCutterUpdate: "get-preferences" });
+publishUpdate({ cookieCutterUpdate: "get-preferences" });
 
 window.addEventListener("cookie-cutter-update-response", function(event) {
     let data = event.detail

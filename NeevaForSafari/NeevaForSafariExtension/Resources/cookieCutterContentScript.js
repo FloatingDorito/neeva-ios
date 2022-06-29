@@ -8,10 +8,12 @@ document.head.appendChild(element);
 // to the SafariWebExtensionHandler.
 window.addEventListener("cookie-cutter-update", function(event) {
     let data = event.detail;
-    
-    browser.runtime.sendMessage(data).then((response) => {
+    let domain = data.domain;
+    let update = data.update.cookieCutterUpdate;
+
+    browser.runtime.sendMessage({ "cookieCutterUpdate": update, domain: domain }).then((response) => {
         window.dispatchEvent(new CustomEvent('cookie-cutter-update-response', { 
-            detail: { respondingTo: data.cookieCutterUpdate, response: response }
+            detail: { respondingTo: update, response: response }
         }));
     }); 
 }, false);
