@@ -198,6 +198,7 @@ struct AddOrUpdateSpaceView: View {
                 inputField(
                     title: .titleField, bodyText: "Please provide a title", inputText: $titleText
                 ).modifier(TextFieldBackgroundModifier())
+                    .accessibilityIdentifier("addOrUpdateSpaceTitle")
 
                 ZStack(alignment: .topTrailing) {
                     inputField(
@@ -209,6 +210,7 @@ struct AddOrUpdateSpaceView: View {
                         UITextView.appearance().backgroundColor = .systemBackground.elevated
                     }
                     .modifier(TextFieldBackgroundModifier())
+                    .accessibilityIdentifier("addOrUpdateSpaceDescription")
 
                     Button {
                         openMarkdownArticle()
@@ -225,7 +227,9 @@ struct AddOrUpdateSpaceView: View {
                     let thumbnails = spaceModel.thumbnailURLCandidates[url],
                     thumbnailModel.showing
                 {
-                    CustomThumbnailPicker(thumbnails: thumbnails, model: thumbnailModel)
+                    CustomThumbnailPicker(
+                        thumbnails: thumbnails, model: thumbnailModel
+                    )
                 } else if case .updateSpace = config, let details = spaceModel.detailedSpace {
                     SpaceThumbnailPicker(spaceDetails: details, model: thumbnailModel)
                 }
@@ -234,6 +238,7 @@ struct AddOrUpdateSpaceView: View {
                         title: .urlField, bodyText: "Add a URL to your new item (optional)",
                         inputText: $urlText
                     ).modifier(TextFieldBackgroundModifier())
+                        .accessibilityIdentifier("addOrUpdateSpaceUrl")
                 }
                 Button(
                     action: {
@@ -266,7 +271,8 @@ struct AddOrUpdateSpaceView: View {
                                 url: oldData.url,
                                 title: titleText,
                                 snippet: descriptionText,
-                                thumbnail: thumbnailModel.selectedData ?? oldData.thumbnail,
+                                thumbnail: thumbnailModel.selectedThumbnail?.absoluteString
+                                    ?? oldData.thumbnail,
                                 previewEntity: oldData.previewEntity)
                             space.contentData?.replaceSubrange(
                                 index..<(index + 1), with: [newData])
@@ -276,16 +282,17 @@ struct AddOrUpdateSpaceView: View {
                             spaceModel.updateSpaceEntity(
                                 spaceID: space.id.id, entityID: entityID,
                                 title: titleText, snippet: descriptionText,
-                                thumbnail: thumbnailModel.selectedData)
-                            thumbnailModel.selectedData = nil
-                            thumbnailModel.thumbnailData = [URL: String]()
+                                thumbnail: thumbnailModel.selectedThumbnail?.absoluteString)
+                            thumbnailModel.thumbnailData = []
                             spaceModel.detailedSpace?.updateDetails()
                         case .updateSpace:
                             var thumbnail: String? = nil
                             if let id = thumbnailModel.selectedSpaceThumbnailEntityID {
                                 thumbnail =
                                     space.contentData?.first(where: { $0.id == id })?.thumbnail
-                            } else if let thumbnailData = thumbnailModel.selectedData {
+                            } else if let thumbnailData = thumbnailModel.selectedThumbnail?
+                                .absoluteString
+                            {
                                 thumbnail = thumbnailData
                             }
                             spaceModel.updateSpaceHeader(

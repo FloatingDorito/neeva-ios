@@ -9,6 +9,7 @@ import SwiftUI
 enum ToolbarAction {
     case back
     case forward
+    case closeTab
     case reloadStop
     case overflow
     case longPressBackForward
@@ -47,6 +48,16 @@ extension BrowserViewController: ToolbarDelegate {
                 }
 
                 self.tabManager.selectedTab?.goForward()
+            case .closeTab:
+                ClientLogger.shared.logCounter(
+                    .ClickClose,
+                    attributes: EnvironmentHelper.shared.getAttributes() + [toolbarActionAttribute]
+                )
+
+                if let tab = self.tabManager.selectedTab {
+                    self.tabManager.close(tab)
+                    self.showTabTray()
+                }
             case .reloadStop:
                 if self.chromeModel.reloadButton == .reload {
                     ClientLogger.shared.logCounter(
@@ -98,7 +109,6 @@ extension BrowserViewController: ToolbarDelegate {
                     .ClickAddToSpaceButton,
                     attributes: EnvironmentHelper.shared.getAttributes() + [toolbarActionAttribute]
                 )
-
             case .showTabs:
                 self.showTabTray()
             case .share:
@@ -106,6 +116,7 @@ extension BrowserViewController: ToolbarDelegate {
             case .showZeroQuery:
                 self.showZeroQuery()
             }
+
             if action != .showZeroQuery,
                 self.tabContainerModel.currentContentUI == .zeroQuery
                     || self.tabContainerModel.currentContentUI == .suggestions
@@ -113,81 +124,5 @@ extension BrowserViewController: ToolbarDelegate {
                 self.hideZeroQuery()
             }
         }
-    }
-
-    func tabToolbarTabsMenu(sourceView: UIView) -> UIMenu? {
-        guard self.presentedViewController == nil else {
-            return nil
-        }
-
-        let switchPrivacyMode = { [self] (_: UIAction) in
-            tabManager.toggleIncognitoMode(
-                fromTabTray: false, clearSelectedTab: false, selectNewTab: true)
-        }
-
-        var switchModeTitle = Strings.openIncognitoModeTitle
-        var switchModeImage: UIImage? = UIImage(named: "incognito")?.withTintColor(
-            .label, renderingMode: .alwaysOriginal)
-
-        var newTabTitle = Strings.NewTabTitle
-        var newTabImage = UIImage(systemSymbol: .plusSquare)
-        var newTabAccessibilityLabel = "New Tab"
-
-        if incognitoModel.isIncognito {
-            switchModeTitle = Strings.leaveIncognitoModeTitle
-            switchModeImage = UIImage(named: "incognitoSlash")?.withTintColor(
-                .label, renderingMode: .alwaysOriginal)
-
-            newTabTitle = Strings.NewIncognitoTabTitle
-            newTabImage = UIImage(systemSymbol: .plusSquareFill)
-            newTabAccessibilityLabel = "New Incognito Tab"
-        }
-
-        let switchModeAction = UIAction(
-            title: switchModeTitle,
-            image: switchModeImage,
-            handler: switchPrivacyMode)
-        let newTabAction = UIAction(title: newTabTitle, image: newTabImage) { _ in
-            DispatchQueue.main.async {
-                self.openLazyTab(openedFrom: .newTabButton)
-            }
-        }
-        newTabAction.accessibilityLabel = newTabAccessibilityLabel
-
-        var actions: [UIMenuElement] = [newTabAction, switchModeAction]
-
-        let tabCount =
-            incognitoModel.isIncognito
-            ? tabManager.incognitoTabs.count : tabManager.normalTabs.count
-
-        if self.tabManager.selectedTab != nil && tabCount > 0 {
-            let closeTabAction = UIAction(
-                title: Strings.CloseTabTitle, image: UIImage(systemSymbol: .xmark)
-            ) { _ in
-                if let tab = self.tabManager.selectedTab {
-                    self.tabManager.removeTab(tab, showToast: false)
-                }
-            }
-            closeTabAction.accessibilityIdentifier = "Close Tab Action"
-            actions.insert(closeTabAction, at: 0)
-        }
-
-        if tabCount > 1 {
-            actions.insert(
-                TabMenu(tabManager: tabManager).createCloseAllTabsAction(sourceView: sourceView),
-                at: 0)
-        }
-
-        let recentlyClosedTabsMenu = gridModel.buildRecentlyClosedTabsMenu()
-        actions.append(
-            UIMenu(
-                title: "Recently Closed Tabs",
-                image: UIImage(systemName: "trash.square"),
-                children: recentlyClosedTabsMenu.children
-            ))
-
-        Haptics.longPress()
-
-        return UIMenu(children: actions)
     }
 }

@@ -130,11 +130,14 @@ class BrowserViewController: UIViewController, ModalPresenter {
 
     private(set) lazy var simulateForwardModel: SimulatedSwipeModel = {
         SimulatedSwipeModel(
-            tabManager: tabManager, chromeModel: chromeModel, swipeDirection: .forward)
+            tabManager: tabManager, chromeModel: chromeModel, swipeDirection: .forward
+        )
     }()
 
     private(set) lazy var simulatedSwipeModel: SimulatedSwipeModel = {
-        SimulatedSwipeModel(tabManager: tabManager, chromeModel: chromeModel, swipeDirection: .back)
+        SimulatedSwipeModel(
+            tabManager: tabManager, chromeModel: chromeModel, swipeDirection: .back
+        )
     }()
 
     private(set) lazy var tabContainerModel: TabContainerModel = {
@@ -145,11 +148,15 @@ class BrowserViewController: UIViewController, ModalPresenter {
         return TrackingStatsViewModel(tabManager: tabManager)
     }()
 
-    var toastViewManager: ToastViewManager
-    var notificationViewManager: NotificationViewManager
+    private(set) lazy var toastViewManager: ToastViewManager = {
+        ToastViewManager(overlayManager: overlayManager)
+    }()
+
+    private(set) lazy var notificationViewManager: NotificationViewManager = {
+        NotificationViewManager(overlayManager: overlayManager)
+    }()
 
     var findInPageModel: FindInPageModel?
-    var overlayWindowManager: WindowManager?
 
     lazy var introViewModel: IntroViewModel = {
         IntroViewModel(
@@ -160,6 +167,8 @@ class BrowserViewController: UIViewController, ModalPresenter {
 
     private(set) var readerModeCache: ReaderModeCache
     private(set) var screenshotHelper: ScreenshotHelper!
+
+    var interstitialViewModel: InterstitialViewModel?
 
     // popover rotation handling
     var displayedPopoverController: UIViewController?
@@ -192,6 +201,8 @@ class BrowserViewController: UIViewController, ModalPresenter {
 
     static var createNewTabOnStartForTesting: Bool = false
 
+    var shouldShowAdBlockPromo: Bool = false
+
     /// Update the screenshot sent along with feedback. Called before opening overflow menu
     func updateFeedbackImage() {
         UIGraphicsBeginImageContextWithOptions(view.window!.bounds.size, true, 0)
@@ -210,9 +221,6 @@ class BrowserViewController: UIViewController, ModalPresenter {
         self.profile = profile
         self.tabManager = TabManager(profile: profile, scene: scene, incognitoModel: incognitoModel)
         self.readerModeCache = DiskReaderModeCache.sharedInstance
-
-        self.toastViewManager = ToastViewManager(window: window)
-        self.notificationViewManager = NotificationViewManager(window: window)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -437,7 +445,7 @@ class BrowserViewController: UIViewController, ModalPresenter {
         view.backgroundColor = .DefaultBackground
 
         webViewContainerBackdrop = UIView()
-        webViewContainerBackdrop.backgroundColor = UIColor.Photon.Ink90
+        webViewContainerBackdrop.backgroundColor = .brand.charcoal
         webViewContainerBackdrop.alpha = 0
         view.addSubview(webViewContainerBackdrop)
 
@@ -471,8 +479,8 @@ class BrowserViewController: UIViewController, ModalPresenter {
 
     fileprivate func setupConstraints() {
         DispatchQueue.main.async {
-            self.browserHost.view.makeAllEdges(equalTo: self.view.superview)
-            self.webViewContainerBackdrop.makeAllEdges(equalTo: self.view.superview)
+            self.browserHost.view.makeAllEdges(equalTo: self.view)
+            self.webViewContainerBackdrop.makeAllEdges(equalTo: self.view)
         }
     }
 
@@ -505,7 +513,7 @@ class BrowserViewController: UIViewController, ModalPresenter {
         // config log environment variable
         ClientLogger.shared.env = EnvironmentHelper.shared.env
 
-        let _ = tabManager.restoreTabs()
+        let didSelectTabOnStartup = tabManager.restoreTabs()
 
         // Handle the case of an existing user upgrading to a version of the app
         // that supports preview mode. They will have tabs already, so we don't
@@ -518,7 +526,7 @@ class BrowserViewController: UIViewController, ModalPresenter {
         DispatchQueue.main.async {
             if Self.createNewTabOnStartForTesting {
                 self.tabManager.select(self.tabManager.addTab())
-            } else if self.tabManager.normalTabs.isEmpty {
+            } else if !didSelectTabOnStartup {
                 #if XYZ
                     self.showZeroQuery()
                 #else
@@ -547,15 +555,18 @@ class BrowserViewController: UIViewController, ModalPresenter {
             } else if let didDismiss = Defaults[.didDismissDefaultBrowserInterstitial],
                 !didDismiss
                     && !Defaults[.didFirstNavigation]
-                    && NeevaExperiment.arm(for: .defaultBrowserChangeButton) == .changeButton
             {
                 restoreDefaultBrowserFirstRun()
             }
         }
 
+        if shouldShowAdBlockPromo {
+            ClientLogger.shared.logCounter(.AdBlockPromoImp)
+            self.showAdBlockerPromo()
+        }
+
         screenshotHelper.viewIsVisible = true
         screenshotHelper.takePendingScreenshots(tabManager.tabs)
-        overlayWindowManager = WindowManager(parentWindow: view.window!)
 
         super.viewDidAppear(animated)
 
@@ -649,132 +660,6 @@ class BrowserViewController: UIViewController, ModalPresenter {
                 hideZeroQuery()
             }
         }
-    }
-
-    private func hideOverlaySheetViewController() {
-        if case .sheet = overlayManager.currentOverlay {
-            overlayManager.hideCurrentOverlay()
-        }
-    }
-
-    private func hideOverlayPopoverViewController() {
-        if case .popover = overlayManager.currentOverlay {
-            overlayManager.hideCurrentOverlay()
-        }
-    }
-
-    func presentFullScreenModal(content: AnyView, completion: (() -> Void)? = nil) {
-        overlayManager.presentFullScreenModal(content: content, completion: completion)
-    }
-
-    func dismissCurrentOverlay() {
-        overlayManager.hideCurrentOverlay()
-    }
-
-    /// Present Content as sheet if on iPhone and in Portrait; otherwise, present as popover
-    ///  - Tag: showModal
-    func showModal<Content: View>(
-        style: OverlayStyle,
-        headerButton: OverlayHeaderButton? = nil,
-        toPosition: OverlaySheetPosition = .middle,
-        @ViewBuilder content: @escaping () -> Content,
-        onDismiss: (() -> Void)? = nil
-    ) {
-        showModal(
-            style: style,
-            headerButton: headerButton,
-            toPosition: toPosition,
-            headerContent: { EmptyView() },
-            content: content,
-            onDismiss: onDismiss
-        )
-    }
-
-    func showModal<Content: View, HeaderContent: View>(
-        style: OverlayStyle,
-        headerButton: OverlayHeaderButton? = nil,
-        toPosition: OverlaySheetPosition = .middle,
-        @ViewBuilder headerContent: @escaping () -> HeaderContent,
-        @ViewBuilder content: @escaping () -> Content,
-        onDismiss: (() -> Void)? = nil
-    ) {
-        if !chromeModel.inlineToolbar {
-            showAsModalOverlaySheet(
-                style: style,
-                toPosition: toPosition,
-                content: content,
-                onDismiss: onDismiss,
-                headerButton: headerButton,
-                headerContent: headerContent
-            )
-        } else {
-            showAsModalOverlayPopover(
-                style: style, content: content, onDismiss: onDismiss, headerButton: headerButton)
-        }
-    }
-
-    func showAsModalOverlaySheet<Content: View>(
-        style: OverlayStyle,
-        toPosition: OverlaySheetPosition = .middle,
-        @ViewBuilder content: @escaping () -> Content,
-        onDismiss: (() -> Void)? = nil,
-        headerButton: OverlayHeaderButton? = nil
-    ) {
-        showAsModalOverlaySheet(
-            style: style,
-            toPosition: toPosition,
-            content: content,
-            onDismiss: onDismiss,
-            headerButton: nil,
-            headerContent: { EmptyView() }
-        )
-    }
-
-    func showAsModalOverlaySheet<Content: View, HeaderContent: View>(
-        style: OverlayStyle,
-        toPosition: OverlaySheetPosition = .middle,
-        @ViewBuilder content: @escaping () -> Content,
-        onDismiss: (() -> Void)? = nil,
-        headerButton: OverlayHeaderButton? = nil,
-        @ViewBuilder headerContent: @escaping () -> HeaderContent
-    ) {
-        let overlayView = OverlaySheetRootView(
-            overlayPosition: toPosition,
-            style: style,
-            content: { AnyView(erasing: content()) },
-            onDismiss: { rootView in
-                onDismiss?()
-                self.overlayManager.hide(overlay: .sheet(rootView))
-            },
-            onOpenURL: { url, rootView in
-                self.overlayManager.hide(overlay: .sheet(rootView))
-                self.openURLInNewTabPreservingIncognitoState(url)
-            },
-            headerButton: headerButton,
-            headerContent: { AnyView(erasing: headerContent()) }
-        )
-
-        overlayManager.show(overlay: .sheet(overlayView))
-    }
-
-    func showAsModalOverlayPopover<Content: View>(
-        style: OverlayStyle,
-        @ViewBuilder content: @escaping () -> Content,
-        onDismiss: (() -> Void)? = nil,
-        headerButton: OverlayHeaderButton? = nil
-    ) {
-        let popoverView = PopoverRootView(
-            style: style, content: { AnyView(erasing: content()) },
-            onDismiss: { rootView in
-                onDismiss?()
-                self.overlayManager.hide(overlay: .popover(rootView))
-            },
-            onOpenURL: { url, rootView in
-                self.overlayManager.hide(overlay: .popover(rootView))
-                self.openURLInNewTabPreservingIncognitoState(url)
-            }, headerButton: headerButton)
-
-        overlayManager.show(overlay: .popover(popoverView))
     }
 
     func finishEditingAndSubmit(
@@ -937,13 +822,6 @@ class BrowserViewController: UIViewController, ModalPresenter {
         )
     }
 
-    func openBlankNewTab(isIncognito: Bool = false) {
-        popToBVC()
-
-        let newTab = tabManager.addTab(isIncognito: isIncognito)
-        tabManager.select(newTab)
-    }
-
     func openLazyTab(
         openedFrom: ZeroQueryOpenedLocation = .openTab(nil), switchToIncognitoMode: Bool? = nil
     ) {
@@ -954,7 +832,6 @@ class BrowserViewController: UIViewController, ModalPresenter {
         }
 
         browserModel.scrollingControlModel.showToolbars(animated: true)
-
         showZeroQuery(openedFrom: openedFrom, isLazyTab: true)
     }
 
@@ -1768,16 +1645,11 @@ extension BrowserViewController: ContextMenuHelperDelegate {
             return
         }
 
-        getImageData(imageURL) { data in
-            let thumbnail = UIImage(data: data)
-
-            self.showAddToSpacesSheet(
-                url: pageURL,
-                title: self.tabManager.selectedTab?.title, thumbnail: thumbnail,
-                webView: webView)
-
-            BrowserViewController.contextMenuElements = nil
-        }
+        showAddToSpacesSheet(
+            url: pageURL,
+            title: self.tabManager.selectedTab?.title,
+            thumbnail: imageURL,
+            webView: webView)
     }
 
     fileprivate func getImageData(_ url: URL, success: @escaping (Data) -> Void) {
@@ -1853,7 +1725,7 @@ extension BrowserViewController: JSPromptAlertControllerDelegate {
 extension BrowserViewController {
     func showAddToSpacesSheet(
         url: URL, title: String?, description: String? = nil,
-        thumbnail: UIImage? = nil, webView: WKWebView,
+        thumbnail: URL? = nil, webView: WKWebView,
         importData: SpaceImportHandler? = nil
     ) {
         // TODO: Avoid needing to lookup the Tab when we already have the WebView.
@@ -1902,23 +1774,36 @@ extension BrowserViewController {
             }
 
             model?.thumbnailURLCandidates[url] = thumbnailUrls
+
             let thumbnailUrl = thumbnailUrls.first(where: {
-                $0.absoluteString.hasSuffix("jpeg") || $0.absoluteString.hasSuffix("jpg")
-                    || $0.absoluteString.hasSuffix("png")
-            })
-            SDWebImageDownloader.shared.downloadImage(with: thumbnailUrl) { image, _, _, _ in
-                self.showAddToSpacesSheet(
-                    url: url, title: updater?.title ?? title,
-                    description: description ?? updater?.description ?? output?.first?.first,
-                    thumbnail: image,
-                    importData: importData, updater: updater)
-            }
+                $0.isImage
+            })?.absoluteString
+
+            self.showAddToSpacesSheet(
+                url: url,
+                title: updater?.title ?? title,
+                description: description ?? updater?.description ?? output?.first?.first,
+                thumbnail: thumbnailUrl,
+                importData: importData,
+                updater: updater)
+        }
+    }
+
+    func showAdBlockerPromo() {
+        self.overlayManager.backgroundOpacityLevel = 2
+        self.showAsModalOverlayPopover(style: .adBlockerPromo) {
+            AdBlockerPromoOverlayContent()
+                .onDisappear {
+                    self.overlayManager.backgroundOpacityLevel = 5
+                }
         }
     }
 
     func showAddToSpacesSheet(
-        url: URL, title: String?,
-        description: String?, thumbnail: UIImage? = nil,
+        url: URL,
+        title: String?,
+        description: String?,
+        thumbnail: String? = nil,
         importData: SpaceImportHandler? = nil,
         updater: SocialInfoUpdater? = nil
     ) {

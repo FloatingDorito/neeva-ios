@@ -29,9 +29,9 @@ extension TabManager {
             for tab in newTabs {
                 tab.rootUUID = rootUUID
             }
-
-            self.updateTabGroupsAndSendNotifications(notify: false)
         }
+
+        self.updateAllTabDataAndSendNotifications(notify: false)
 
         // Select the most recent.
         if shouldSelectTab {
@@ -172,8 +172,15 @@ extension TabManager {
         }
 
         if notify {
-            updateTabGroupsAndSendNotifications(notify: notify)
+            updateAllTabDataAndSendNotifications(notify: notify)
         }
+    }
+
+    func duplicateTab(_ tab: Tab, incognito: Bool) {
+        guard let url = tab.url else { return }
+        let newTab = addTab(
+            URLRequest(url: url), afterTab: tab, isIncognito: incognito)
+        selectTab(newTab, notify: true)
     }
 
     // MARK: - Tab Groups
@@ -222,7 +229,8 @@ extension TabManager {
 
     // MARK: - Restore Tabs
     func restoreSavedTabs(
-        _ savedTabs: [SavedTab], isIncognito: Bool = false, shouldSelectTab: Bool = true
+        _ savedTabs: [SavedTab], isIncognito: Bool = false, shouldSelectTab: Bool = true,
+        overrideSelectedTab: Bool = false
     ) -> Tab? {
         // makes sure at least one tab is selected
         // if no tab selected, select the last one (most recently closed)
@@ -252,12 +260,14 @@ extension TabManager {
             }
         }
 
-        updateTabGroupsAndSendNotifications(notify: true)
+        updateAllTabDataAndSendNotifications(notify: true)
 
         // Prevents a sticky tab tray
         SceneDelegate.getBVC(with: scene).browserModel.cardTransitionModel.update(to: .hidden)
 
-        if let selectedSavedTab = selectedSavedTab, shouldSelectTab, selectedTab == nil {
+        if let selectedSavedTab = selectedSavedTab, shouldSelectTab,
+            selectedTab == nil || overrideSelectedTab
+        {
             self.selectTab(selectedSavedTab, notify: true)
         }
 

@@ -10,7 +10,7 @@ struct ExperimentSettingsView: View {
     @Environment(\.dismissScreen) var dismissScreen
 
     let scrollViewAppearance = UINavigationBar.appearance().scrollEdgeAppearance
-    @State private var valueTextDefaultBrowser: String?
+    @State private var valueTextNewScreen: String?
     @State private var valueTextPromoCard: String?
 
     var body: some View {
@@ -36,10 +36,10 @@ struct ExperimentSettingsView: View {
                     experiment: .promoCardTypeAfterFirstRun
                 )
 
-                OptionalPrefilledStringField<NeevaExperiment.DefaultBrowserChangeButton>(
-                    "DefaultBrowserChangeButton",
-                    value: $valueTextPromoCard,
-                    experiment: .defaultBrowserChangeButton
+                OptionalPrefilledStringField<NeevaExperiment.DefaultBrowserNewScreen>(
+                    "DefaultBrowserNewScreen",
+                    value: $valueTextNewScreen,
+                    experiment: .defaultBrowserNewScreen
                 )
             }
         }

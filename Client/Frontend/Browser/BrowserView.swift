@@ -13,6 +13,7 @@ struct BrowserContentView: View {
     let cardGrid: CardGrid
 
     @EnvironmentObject private var contentVisibilityModel: ContentVisibilityModel
+    @EnvironmentObject private var gridModel: GridModel
 
     private var tabContainerContent: some View {
         TabContainerContent(
@@ -130,6 +131,13 @@ struct BrowserView: View {
             \.openSettings,
             { page in
                 bvc.openSettings(openPage: page)
+            }
+        )
+        .environment(
+            \.openArchivedTabsPanelView,
+            {
+                bvc.present(
+                    ArchivedTabsPanelViewController(browserModel: browserModel), animated: true)
             }
         )
         .environmentObject(browserModel)

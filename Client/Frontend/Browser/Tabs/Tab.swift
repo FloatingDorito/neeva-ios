@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import Combine
+import Defaults
 import Foundation
 import Shared
 import Storage
@@ -39,9 +40,12 @@ protocol TabDelegate {
     @objc optional func tab(_ tab: Tab, willDeleteWebView webView: WKWebView)
 }
 
-enum TimeFilter: String {
+public enum TimeFilter: String, CaseIterable {
     case today = "Today"
-    case lastWeek = "Last Week"
+    case yesterday = "Yesterday"
+    case lastWeek = "Past 7 Days"
+    case lastMonth = "Past 30 Days"
+    case overAMonth = "Older"
 }
 
 class Tab: NSObject, ObservableObject {
@@ -99,9 +103,10 @@ class Tab: NSObject, ObservableObject {
     @Published private(set) var estimatedProgress: Double = 0
     @Published private(set) var canGoBack = false
     @Published private(set) var canGoForward = false
-    @Published private(set) var title: String?
+    @Published var title: String?
     /// For security reasons, the URL may differ from the web view’s URL.
-    @Published private(set) var url: URL?
+    @Published var url: URL?
+    @Default(.archivedTabsDuration) var archivedTabsDuration
 
     private var observer: AnyCancellable?
     var pageZoom: CGFloat = 1.0 {
@@ -200,6 +205,22 @@ class Tab: NSObject, ObservableObject {
             return readerMode.state != .unavailable
         }
         return false
+    }
+
+    var isArchived: Bool {
+        switch archivedTabsDuration {
+        case .week:
+            return
+                !(wasLastExecuted(.today) || wasLastExecuted(.yesterday)
+                || wasLastExecuted(.lastWeek))
+        case .month:
+            return
+                !(wasLastExecuted(.today) || wasLastExecuted(.yesterday)
+                || wasLastExecuted(.lastWeek)
+                || wasLastExecuted(.lastMonth))
+        case .forever:
+            return false
+        }
     }
 
     fileprivate(set) var screenshot: UIImage?
@@ -422,6 +443,7 @@ class Tab: NSObject, ObservableObject {
     }
 
     func close() {
+        // TODO: - deinit cheatsheet models
         contentScriptManager.uninstall(tab: self)
         webViewSubscriptions = []
 
@@ -545,6 +567,12 @@ class Tab: NSObject, ObservableObject {
 
     func getMostRecentQuery(restrictToCurrentNavigation: Bool = false) -> QueryForNavigation.Query?
     {
+        guard Thread.isMainThread else {
+            return DispatchQueue.main.sync {
+                getMostRecentQuery(restrictToCurrentNavigation: restrictToCurrentNavigation)
+            }
+        }
+
         guard let webView = webView else {
             return nil
         }
@@ -610,6 +638,13 @@ class Tab: NSObject, ObservableObject {
         if revUUID {
             self.screenshotUUID = UUID()
         }
+
+        guard let screenshotUUID = screenshotUUID, let screenshot = screenshot else {
+            return
+        }
+
+        TabManagerStore.shared.imageStore?.updateOne(
+            key: screenshotUUID.uuidString, image: screenshot)
     }
 
     func toggleChangeUserAgent() {
@@ -675,30 +710,7 @@ class Tab: NSObject, ObservableObject {
         // The fallback value won't be used. tab.lastExecutedTime is
         // guaranteed to be non-nil in configureTab()
         let lastExecutedTime = lastExecutedTime ?? Date.nowMilliseconds()
-        let minusOneDayToCurrentDate =
-            FeatureFlag[.demoteAfter15secondsTimeBasedSwitcher]
-            ? Calendar.current.date(
-                byAdding: .second, value: -15, to: Date())
-            : Calendar.current.date(
-                byAdding: .day, value: -1, to: Date())
-        guard let startOfOneDayAgo = minusOneDayToCurrentDate else {
-            return true
-        }
-        // timeIntervalSince1970 returns the number of seconds. It is converted
-        // to milliseconds by multiplying by 1000 to compare with lastExecutedTime
-        // which is stored in milliseconds.
-        switch byTime {
-        case .today:
-            return lastExecutedTime > Int64(startOfOneDayAgo.timeIntervalSince1970 * 1000)
-        case .lastWeek:
-            let minusOneWeekToCurrentDate = Calendar.current.date(
-                byAdding: .day, value: -7, to: Date())
-            guard let startOfLastWeek = minusOneWeekToCurrentDate else {
-                return true
-            }
-            return lastExecutedTime < Int64(startOfOneDayAgo.timeIntervalSince1970 * 1000)
-                && lastExecutedTime > Int64(startOfLastWeek.timeIntervalSince1970 * 1000)
-        }
+        return isLastExecutedTimeInTimeFilter(lastExecutedTime, byTime)
     }
 }
 
@@ -732,7 +744,6 @@ extension Tab: ContentBlockerTab {
 
     func injectCookieCutterScript(cookieCutterModel: CookieCutterModel) {
         let cookieCutterHelper = CookieCutterHelper(cookieCutterModel: cookieCutterModel)
-        cookieCutterHelper.currentWebView = webView
         addContentScript(cookieCutterHelper, name: CookieCutterHelper.name())
     }
 }
@@ -856,5 +867,67 @@ class TabWebView: WKWebView, MenuHelperInterface {
         _ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil
     ) {
         super.evaluateJavaScript(javaScriptString, completionHandler: completionHandler)
+    }
+}
+
+public func isLastExecutedTimeInTimeFilter(_ lastExecutedTime: Timestamp, _ byTime: TimeFilter)
+    -> Bool
+{
+    let minusOneDayToCurrentDate =
+        FeatureFlag[.shortenTimeThresholdForArchivingTabs]
+        ? Calendar.current.date(
+            byAdding: .second, value: -15, to: Date())
+        : Calendar.current.date(
+            byAdding: .day, value: -1, to: Date())
+    let minusTwoDaysToCurrentDate =
+        FeatureFlag[.shortenTimeThresholdForArchivingTabs]
+        ? Calendar.current.date(
+            byAdding: .second, value: -30, to: Date())
+        : Calendar.current.date(
+            byAdding: .day, value: -2, to: Date())
+    let minusOneWeekToCurrentDate =
+        FeatureFlag[.shortenTimeThresholdForArchivingTabs]
+        ? Calendar.current.date(
+            byAdding: .second, value: -45, to: Date())
+        : Calendar.current.date(
+            byAdding: .day, value: -7, to: Date())
+    let minusOneMonthToCurrentDate =
+        FeatureFlag[.shortenTimeThresholdForArchivingTabs]
+        ? Calendar.current.date(
+            byAdding: .minute, value: -1, to: Date())
+        : Calendar.current.date(
+            byAdding: .month, value: -1, to: Date())
+    guard let startOfOneDayAgo = minusOneDayToCurrentDate,
+        let startOfTwodaysAgo = minusTwoDaysToCurrentDate,
+        let startOfLastWeek = minusOneWeekToCurrentDate,
+        let startOfLastMonth = minusOneMonthToCurrentDate
+    else {
+        return true
+    }
+    // timeIntervalSince1970 returns the number of seconds. It is converted
+    // to milliseconds by multiplying by 1000 to compare with lastExecutedTime
+    // which is stored in milliseconds.
+    switch byTime {
+    case .today:
+        return FeatureFlag[.shortenTimeThresholdForArchivingTabs]
+            ? lastExecutedTime > Int64(startOfOneDayAgo.timeIntervalSince1970 * 1000)
+            : Date.fromTimestamp(lastExecutedTime).isToday()
+    case .yesterday:
+        return FeatureFlag[.shortenTimeThresholdForArchivingTabs]
+            ? (lastExecutedTime < Int64(startOfOneDayAgo.timeIntervalSince1970 * 1000)
+                && lastExecutedTime > Int64(startOfTwodaysAgo.timeIntervalSince1970 * 1000))
+            : Date.fromTimestamp(lastExecutedTime).isYesterday()
+    case .lastWeek:
+        return
+            (FeatureFlag[.shortenTimeThresholdForArchivingTabs]
+            ? lastExecutedTime < Int64(startOfTwodaysAgo.timeIntervalSince1970 * 1000)
+            : !Date.fromTimestamp(lastExecutedTime).isToday()
+                && !Date.fromTimestamp(lastExecutedTime).isYesterday())
+            && lastExecutedTime > Int64(startOfLastWeek.timeIntervalSince1970 * 1000)
+    case .lastMonth:
+        return lastExecutedTime < Int64(startOfLastWeek.timeIntervalSince1970 * 1000)
+            && lastExecutedTime > Int64(startOfLastMonth.timeIntervalSince1970 * 1000)
+    case .overAMonth:
+        return lastExecutedTime < Int64(startOfLastMonth.timeIntervalSince1970 * 1000)
     }
 }

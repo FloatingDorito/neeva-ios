@@ -11,59 +11,80 @@ class InterstitialViewModel: ObservableObject {
     @Published var openButtonText: String
     @Published var remindButtonText: String
 
+    @Published var shouldHide: Bool = true
+
     var trigger: OpenDefaultBrowserOnboardingTrigger
     var showRemindButton: Bool
     var showCloseButton: Bool
-
-    var inButtonTextExperiment: Bool
     var restoreFromBackground: Bool
+    var showSecondaryOnboardingButton: Bool
 
     var onOpenSettingsAction: (() -> Void)?
     var onCloseAction: (() -> Void)?
 
     var didTakeAction = false
 
+    var isInExperimentArm: Bool
+    var onboardingState: OnboardingState
+
+    var onboardingAppearTimestamp: Date?
+
+    var player: QueuePlayerUIView?
+
+    enum OnboardingState {
+        case initialState
+        case continueState
+        case openedSettingsState
+    }
+
     init(
         trigger: OpenDefaultBrowserOnboardingTrigger = .defaultBrowserFirstScreen,
         showRemindButton: Bool = true,
-        inButtonTextExperiment: Bool = false,
         restoreFromBackground: Bool = false,
         showCloseButton: Bool = true,
+        showSecondaryOnboardingButton: Bool = true,
+        isInExperimentArm: Bool = false,
+        onboardingState: OnboardingState = .initialState,
         onOpenSettingsAction: (() -> Void)? = nil,
         onCloseAction: (() -> Void)? = nil
     ) {
         self.trigger = trigger
         self.showRemindButton = showRemindButton
-        self.inButtonTextExperiment = inButtonTextExperiment
-        self.restoreFromBackground = restoreFromBackground
         self.showCloseButton = showCloseButton
+        self.restoreFromBackground = restoreFromBackground
         self.onOpenSettingsAction = onOpenSettingsAction
         self.onCloseAction = onCloseAction
+        self.showSecondaryOnboardingButton = showSecondaryOnboardingButton
+        self.onboardingState = onboardingState
+        self.isInExperimentArm = isInExperimentArm
 
         self.openButtonText = restoreFromBackground ? "Back to Settings" : "Open Neeva Settings"
-        self.remindButtonText =
-            inButtonTextExperiment
-            ? (restoreFromBackground ? "Continue to Neeva" : "Maybe Later") : "Remind Me Later"
+        self.remindButtonText = restoreFromBackground ? "Continue to Neeva" : "Remind Me Later"
     }
 
-    func openSettingsButtonClickAction() {
+    func openSettingsButtonClickAction(
+        interaction: LogConfig.Interaction = .DefaultBrowserOnboardingInterstitialOpen
+    ) {
         if let onOpenSettingsAction = onOpenSettingsAction {
             onOpenSettingsAction()
         }
         didTakeAction = true
-        if inButtonTextExperiment {
-            openButtonText = "Back to Settings"
-            if Defaults[.didDismissDefaultBrowserInterstitial] == false
-                && !Defaults[.didFirstNavigation]
-            {
-                remindButtonText = "Continue to Neeva"
-                restoreFromBackground = true
-            }
+
+        openButtonText = "Back to Settings"
+        if Defaults[.didDismissDefaultBrowserInterstitial] == false
+            && !Defaults[.didFirstNavigation]
+        {
+            remindButtonText = "Continue to Neeva"
+            // TODO once we decide on arm, should convert this to be a state
+            // as we are not really in restore state, this will work for all
+            // arms right now
+            restoreFromBackground = true
         }
+
         Defaults[.lastDefaultBrowserInterstitialChoice] =
             DefaultBrowserInterstitialChoice.openSettings.rawValue
         ClientLogger.shared.logCounter(
-            .DefaultBrowserOnboardingInterstitialOpen,
+            interaction,
             attributes: [
                 ClientLogCounterAttribute(
                     key:
@@ -97,7 +118,7 @@ class InterstitialViewModel: ObservableObject {
             }
         }
 
-        closeAction()
+        closeAction(shouldLog: false)
         Defaults[.lastDefaultBrowserInterstitialChoice] =
             DefaultBrowserInterstitialChoice.skipForNow.rawValue
         ClientLogger.shared.logCounter(
@@ -112,22 +133,39 @@ class InterstitialViewModel: ObservableObject {
         )
     }
 
-    func closeAction() {
+    func closeAction(shouldLog: Bool = true) {
         if let onCloseAction = onCloseAction {
             onCloseAction()
         }
         didTakeAction = true
         Defaults[.lastDefaultBrowserInterstitialChoice] =
             DefaultBrowserInterstitialChoice.skipForNow.rawValue
-        ClientLogger.shared.logCounter(
-            .DefaultBrowserOnboardingInterstitialSkip,
-            attributes: [
-                ClientLogCounterAttribute(
-                    key:
-                        LogConfig.PromoCardAttribute.defaultBrowserInterstitialTrigger,
-                    value: trigger.rawValue
-                )
-            ]
-        )
+        if shouldLog {
+            ClientLogger.shared.logCounter(
+                .DefaultBrowserOnboardingInterstitialSkip,
+                attributes: [
+                    ClientLogCounterAttribute(
+                        key:
+                            LogConfig.PromoCardAttribute.defaultBrowserInterstitialTrigger,
+                        value: trigger.rawValue
+                    )
+                ]
+            )
+        }
+    }
+
+    func welcomePageBullets() -> [String] {
+        return [
+            "Ad-Free Search",
+            "Block Ads. Block Trackers",
+            "Block Cookie Pop-ups",
+        ]
+    }
+
+    func onboardingPageBullets() -> [String] {
+        return [
+            "Browse the Web Ad-Free",
+            "Block Trackers, and Pop-ups",
+        ]
     }
 }

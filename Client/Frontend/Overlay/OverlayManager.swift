@@ -36,8 +36,10 @@ enum OverlayType: Equatable {
 
     func isPriority(_ priorities: [OverlayPriority]) -> Bool {
         switch self {
-        case .backForwardList, .find, .fullScreenModal:
+        case .backForwardList, .find:
             return priorities.contains(.modal)
+        case .fullScreenModal:
+            return priorities.contains(.fullScreen)
         case .popover, .sheet:
             return priorities.contains(.modal) || priorities.contains(.sheet)
         case .notification, .toast:
@@ -76,36 +78,42 @@ class OverlayManager: ObservableObject {
     @Published var offsetForBottomBar = false
     @Published var hideBottomBar = false
     @Published var isPresentedViewControllerVisible = false
+    @Published var backgroundOpacityLevel = 5
 
     /// Used to control full screen/popover sheets
     @Published var showFullScreenPopoverSheet = false
 
     private let animation = Animation.easeInOut(duration: 0.2)
-    /// (Overlay, Animate, Completion])
+    /// [(Overlay, Animate, Completion)]
     var queuedOverlays = [(OverlayType, Bool, (() -> Void)?)]()
 
     public func presentFullScreenModal(
-        content: AnyView, animate: Bool = true, completion: (() -> Void)? = nil
+        content: AnyView, animate: Bool = true, ignoreSafeArea: Bool = true,
+        completion: (() -> Void)? = nil
     ) {
         let content = AnyView(
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea()
+                .if(ignoreSafeArea) { view in
+                    view.ignoresSafeArea()
+                }
         )
 
         show(overlay: .fullScreenModal(content), animate: animate, completion: completion)
     }
 
-    public func show(overlay: OverlayType, animate: Bool = true, completion: (() -> Void)? = nil) {
+    @discardableResult public func show(
+        overlay: OverlayType, animate: Bool = true, completion: (() -> Void)? = nil
+    ) -> OverlayType {
         guard animationCompleted == nil else {
             queuedOverlays.append((overlay, animate, completion))
-            return
+            return overlay
         }
 
         if overlay.isPriority(.transient) {
             guard currentOverlay == nil else {
                 queuedOverlays.append((overlay, animate, completion))
-                return
+                return overlay
             }
 
             presentOverlay(overlay: overlay, animate: animate)
@@ -116,6 +124,8 @@ class OverlayManager: ObservableObject {
                 completion?()
             }
         }
+
+        return overlay
     }
 
     private func showNextOverlayIfNeeded() {

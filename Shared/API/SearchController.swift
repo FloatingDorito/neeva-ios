@@ -54,19 +54,6 @@ public enum NeevaScopeSearch {
         case Place(result: PlaceResult)
         case PlaceList(result: PlaceListResult)
         case RichEntity(result: RichEntityResult)
-
-        var order: Int {
-            switch self {
-            case .RecipeBlock, .Place, .PlaceList, .RichEntity:
-                return 0
-            case .ProductCluster, .NewsGroup:
-                return 1
-            case .WebGroup:
-                return 2
-            case .RelatedSearches:
-                return 3
-            }
-        }
     }
 
     fileprivate struct PartialResult<T> {
@@ -257,7 +244,6 @@ public enum NeevaScopeSearch {
     public class SearchController:
         QueryController<SearchQuery, [SearchController.RichResult]>
     {
-
         public struct RichResult: Identifiable {
             public var id = UUID()
             public var result: RichSearchResult
@@ -270,6 +256,14 @@ public enum NeevaScopeSearch {
             }
         }
 
+        private static let queue = DispatchQueue(
+            label: "co.neeva.app.ios.shared.SearchController",
+            qos: .userInitiated,
+            attributes: [],
+            autoreleaseFrequency: .inherit,
+            target: nil
+        )
+
         private var query: String
 
         public init(query: String) {
@@ -277,8 +271,9 @@ public enum NeevaScopeSearch {
             super.init()
         }
 
+        @available(*, unavailable)
         public override func reload() {
-            self.perform(query: SearchQuery(query: query))
+            fatalError("reload() has not been implemented")
         }
 
         private class func constructProductCluster(
@@ -928,18 +923,17 @@ public enum NeevaScopeSearch {
                 richResults.append(webRichResult)
             }
 
-            // order the results
-            richResults.sort {
-                $0.result.order < $1.result.order
-            }
-
             return richResults
         }
 
         @discardableResult public static func getRichResult(
             query: String, completion: @escaping (Result<[RichResult], Error>) -> Void
         ) -> Combine.Cancellable {
-            Self.perform(query: SearchQuery(query: query), completion: completion)
+            Self.perform(
+                query: SearchQuery(query: query),
+                on: queue,
+                completion: completion
+            )
         }
     }
 }

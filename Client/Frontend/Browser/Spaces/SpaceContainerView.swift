@@ -25,6 +25,8 @@ struct SpaceContainerView: View {
     @State private var showingProfileUI = false
     @State private var showingAnotherSpace = false
     @State private var selectedSpaceId: String?
+    @Environment(\.onOpenURLForSpace) var onOpenURLForSpace
+    @Environment(\.shareURL) var shareURL
 
     var space: Space? {
         primitive.item
@@ -36,7 +38,8 @@ struct SpaceContainerView: View {
             SpaceTopView(
                 primitive: primitive,
                 headerVisible: $headerVisible,
-                addToAnotherSpace: addToAnotherSpace
+                addToAnotherSpace: addToAnotherSpace,
+                space: space
             )
 
             profileUINavigationLink
@@ -80,11 +83,13 @@ struct SpaceContainerView: View {
         }
     }
 
-    private func addToAnotherSpace(url: URL, title: String?, description: String?) {
+    private func addToAnotherSpace(
+        url: URL, title: String?, description: String?, thumbnail: String?
+    ) {
         spacesModel.detailedSpace = nil
         SceneDelegate.getBVC(with: tabModel.manager.scene)
             .showAddToSpacesSheet(
-                url: url, title: title, description: description)
+                url: url, title: title, description: description, thumbnail: thumbnail)
     }
 
     private var profileUINavigationLink: some View {
@@ -97,6 +102,8 @@ struct SpaceContainerView: View {
                     },
                     owner: space.owner
                 )
+                .environment(\.onOpenURLForSpace, onOpenURLForSpace)
+                .environment(\.shareURL, shareURL)
             }
         } label: {
             EmptyView()
@@ -109,6 +116,8 @@ struct SpaceContainerView: View {
             if let selectedId = selectedSpaceId {
                 let primitive = SpaceCardDetails(id: selectedId, manager: SpaceStore.shared)
                 SpaceContainerView(primitive: primitive)
+                    .environment(\.onOpenURLForSpace, onOpenURLForSpace)
+                    .environment(\.shareURL, shareURL)
             }
         } label: {
             EmptyView()

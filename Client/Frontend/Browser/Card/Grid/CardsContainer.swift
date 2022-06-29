@@ -43,33 +43,26 @@ struct TabGridContainer: View {
     @State var cardStackGeom: CGSize = CGSize.zero
 
     var selectedRowId: TabCardModel.Row.ID? {
-        // note: this is still WIP, it's working but can remove some of the code
-        if !FeatureFlag[.enableTimeBasedSwitcher] {
-            return isIncognito
-                ? tabModel.incognitoRows.first { $0.cells.contains(where: \.isSelected) }?.id
-                : tabModel.normalRows.first { $0.cells.contains(where: \.isSelected) }?.id
-        } else {
-            if isIncognito {
-                if let row = tabModel.getRows(incognito: true).first(where: { row in
-                    row.cells.contains(where: \.isSelected)
-                }) {
-                    if row.index == 2 {
-                        // scroll to today header
-                        return [TabCardModel.todayRowHeaderID]
-                    } else {
-                        return row.id
-                    }
+        if isIncognito {
+            if let row = tabModel.getRows(incognito: true).first { row in
+                row.cells.contains(where: \.isSelected)
+            } {
+                if row.index == 2 {
+                    // scroll to today header
+                    return [TabCardModel.todayRowHeaderID]
+                } else {
+                    return row.id
                 }
-            } else {
-                if let row = tabModel.getRows(incognito: false).first(where: { row in
-                    row.cells.contains(where: \.isSelected)
-                }) {
-                    if row.index == 2 {
-                        // scroll to today header
-                        return [TabCardModel.todayRowHeaderID]
-                    } else {
-                        return row.id
-                    }
+            }
+        } else {
+            if let row = tabModel.getRows(incognito: false).first { row in
+                row.cells.contains(where: \.isSelected)
+            } {
+                if row.index == 2 {
+                    // scroll to today header
+                    return [TabCardModel.todayRowHeaderID]
+                } else {
+                    return row.id
                 }
             }
         }
@@ -81,33 +74,7 @@ struct TabGridContainer: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 // When there aren't enough tabs to make the scroll view scrollable, we build a VStack
                 // with spacer to pin ArchivedTabsView at the bottom of the scrollView.
-                if FeatureFlag[.enableTimeBasedSwitcher] && !isIncognito
-                    && geom.size.height >= cardStackGeom.height
-                {
-                    VStack(alignment: .leading, spacing: 0) {
-                        SingleLevelTabCardsView(containerGeometry: geom, incognito: isIncognito)
-                        Spacer()
-                        if FeatureFlag[.enableArchivedTabsView]
-                            && tabModel.getRows(incognito: isIncognito).count > 0
-                        {
-                            ArchivedTabsView(containerGeometry: geom.size)
-                        }
-                    }.frame(minWidth: geom.size.width, minHeight: geom.size.height)
-                } else {
-                    VStack(alignment: .leading, spacing: 0) {
-                        SingleLevelTabCardsView(containerGeometry: geom, incognito: isIncognito)
-                        if FeatureFlag[.enableArchivedTabsView] && !isIncognito
-                            && tabModel.getRows(incognito: isIncognito).count > 0
-                        {
-                            Spacer()
-                            ArchivedTabsView(containerGeometry: geom.size)
-                        }
-                    }.frame(
-                        minWidth: geom.size.width,
-                        minHeight: geom.size.height,
-                        alignment: .topLeading
-                    )
-                }
+                SingleLevelTabCardsView(containerGeometry: geom, incognito: isIncognito)
             }.background(
                 GeometryReader { proxy in
                     Color.clear
@@ -117,8 +84,13 @@ struct TabGridContainer: View {
                 }
             )
         }
+        .frame(
+            minHeight:
+                geom.size.height - UIConstants.ArchivedTabsViewHeight - CardGridUX.GridSpacing,
+            maxHeight: .infinity,
+            alignment: .top
+        )
         .environment(\.aspectRatio, CardUX.DefaultTabCardRatio)
-        .padding(.vertical, !FeatureFlag[.enableTimeBasedSwitcher] ? (landscapeMode ? 8 : 16) : 0)
         .useEffect(deps: gridModel.needsScrollToSelectedTab) { _ in
             if let selectedRowId = selectedRowId {
                 withAnimation(nil) {
@@ -205,9 +177,10 @@ struct CardsContainer: View {
                 CardScrollContainer(columns: columns) { scrollProxy in
                     VStack(alignment: .leading) {
                         LazyVGrid(columns: columns, spacing: CardGridUX.GridSpacing) {
-                            SpaceCardsView()
+                            SpaceCardsView(spacesModel: spacesModel)
                                 .environment(\.columns, columns)
                         }.animation(nil)
+
                         if !NeevaUserInfo.shared.isUserLoggedIn {
                             SpacesIntroOverlayContent()
                         }
@@ -227,27 +200,28 @@ struct CardsContainer: View {
                 // Normal Tabs
                 ZStack {
                     if !tabModel.isSearchingForTabs {
-                        EmptyCardGrid(isIncognito: false, isTopBar: chromeModel.inlineToolbar)
-                            .opacity(tabModel.normalDetails.isEmpty ? 1 : 0)
+                        EmptyCardGrid(
+                            isIncognito: false,
+                            isTopBar: chromeModel.inlineToolbar,
+                            showArchivedTabsView:
+                                tabModel.manager.activeNormalTabs.isEmpty
+                        ).opacity(tabModel.normalDetails.isEmpty ? 1 : 0)
                     }
 
-                    CardScrollContainer(columns: columns) { scrollProxy in
-                        TabGridContainer(isIncognito: false, geom: geom, scrollProxy: scrollProxy)
-                    }.onAppear {
-                        gridModel.scrollToSelectedTab()
+                    if !tabModel.manager.activeNormalTabs.isEmpty {
+                        CardScrollContainer(columns: columns) { scrollProxy in
+                            TabGridContainer(
+                                isIncognito: false,
+                                geom: geom,
+                                scrollProxy: scrollProxy
+                            )
+                            .zIndex(1)
+                            ArchivedTabsView(containerGeometry: geom.size)
+                        }.onAppear {
+                            gridModel.scrollToSelectedTab()
+                        }
                     }
-
-                    // isolate ArchivedTabsView when there is no tab to make it not scrollable
-                    if FeatureFlag[.enableArchivedTabsView]
-                        && tabModel.getRows(incognito: false).count == 0
-                    {
-                        VStack {
-                            Spacer()
-                            ArchivedTabsView(containerGeometry: containerGeom)
-                        }.frame(width: containerGeom.width, height: containerGeom.height)
-                    }
-                }
-                .offset(
+                }.offset(
                     x: (gridModel.switcherState == .tabs
                         ? (incognitoModel.isIncognito ? geom.widthIncludingSafeArea : 0)
                         : -geom.widthIncludingSafeArea)
@@ -261,8 +235,11 @@ struct CardsContainer: View {
                 // Incognito Tabs
                 ZStack {
                     if !tabModel.isSearchingForTabs {
-                        EmptyCardGrid(isIncognito: true, isTopBar: chromeModel.inlineToolbar)
-                            .opacity(tabModel.incognitoDetails.isEmpty ? 1 : 0)
+                        EmptyCardGrid(
+                            isIncognito: true,
+                            isTopBar: chromeModel.inlineToolbar,
+                            showArchivedTabsView: false
+                        ).opacity(tabModel.incognitoDetails.isEmpty ? 1 : 0)
                     }
 
                     CardScrollContainer(columns: columns) { scrollProxy in
@@ -299,11 +276,20 @@ struct CardsContainer: View {
     }
 }
 
-func getLogCounterAttributesForTabs(selectedTabRow: Int?) -> [ClientLogCounterAttribute] {
+func getLogCounterAttributesForTabs(tab: Tab) -> [ClientLogCounterAttribute] {
+    var lastExecutedTime = ""
+
+    for time in TimeFilter.allCases {
+        if tab.wasLastExecuted(time) {
+            lastExecutedTime = time.rawValue
+            break
+        }
+    }
+
     var attributes = EnvironmentHelper.shared.getAttributes()
     attributes.append(
         ClientLogCounterAttribute(
-            key: LogConfig.TabsAttribute.selectedTabRow,
-            value: String(selectedTabRow ?? 0)))
+            key: LogConfig.TabsAttribute.selectedTabSection,
+            value: lastExecutedTime))
     return attributes
 }

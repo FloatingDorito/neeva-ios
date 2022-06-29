@@ -33,13 +33,12 @@ struct SingleLevelTabCardsView: View {
             tabModel.getRows(incognito: incognito)
         ) { row in
             HStack(spacing: CardGridUX.GridSpacing) {
-                ForEach(row.cells) { details in
+                ForEach(Array(row.cells.enumerated()), id: \.0) { index, details in
                     switch details {
                     case .tabGroupInline(let groupDetails):
                         CollapsedCardGroupView(
                             groupDetails: groupDetails, containerGeometry: containerGeometry,
-                            rowIndex: row.index,
-                            nextToCells: row.multipleCellTypes
+                            row: row, cellIndex: index
                         )
                         .padding(.horizontal, -CardGridUX.GridSpacing)
                         .padding(.bottom, CardGridUX.GridSpacing)
@@ -47,7 +46,7 @@ struct SingleLevelTabCardsView: View {
                     case .tabGroupGridRow(let groupDetails, let range):
                         ExpandedCardGroupRowView(
                             groupDetails: groupDetails, containerGeometry: containerGeometry,
-                            range: range, rowIndex: row.index, nextToCells: false
+                            range: range, row: row, cellIndex: index
                         )
                         .padding(.horizontal, -CardGridUX.GridSpacing)
                         .padding(
@@ -65,7 +64,7 @@ struct SingleLevelTabCardsView: View {
                                 ClientLogger.shared.logCounter(
                                     .SelectTab,
                                     attributes: getLogCounterAttributesForTabs(
-                                        selectedTabRow: row.index))
+                                        tab: tabDetails.tab))
                                 browserModel.hideGridWithAnimation(tabToBeSelected: tabDetails.tab)
                             }
                     case .sectionHeader(let byTime):
@@ -73,11 +72,11 @@ struct SingleLevelTabCardsView: View {
                             Color.secondarySystemFill
                                 .frame(height: 8)
                                 .padding(.horizontal, -CardGridUX.GridSpacing)
+
                             HStack {
                                 Text(byTime.rawValue)
                                     .withFont(.labelLarge)
                                     .foregroundColor(.label)
-                                    .padding(.leading, 20)
                                     .padding(.top, 12)
                                     .padding(.bottom, 8)
                                 Spacer()

@@ -43,6 +43,8 @@ public struct LogConfig {
         case ClickBack
         /// Click forward button to navigate to next page
         case ClickForward
+        /// Click close button to close current tab
+        case ClickClose
         /// Tap and Hold forward button to show navigation stack
         case LongPressForward
 
@@ -198,11 +200,6 @@ public struct LogConfig {
         case StartExperiment
         /// Tap on Get started in welcome screen
         case GetStartedInWelcome
-        /// Resolved AdService attributionToken (if one exists)
-        case ResolvedAttributionToken
-        /// Request AttributionToken error
-        case ResolvedAttributionTokenError
-        case ResolvedAttributionTokenRetryError
         /// Log first navigation
         case FirstNavigation
         /// Log interstitial logging error
@@ -211,6 +208,8 @@ public struct LogConfig {
         case NeevaAttributionRequestError
         /// Default browser interstitial restore imp
         case DefaultBrowserInterstitialRestoreImp
+        /// Recommended space tap on preview zero query
+        case SpacesRecommendedDetailUIVisited
 
         // MARK: promo card
         /// Promo card is rendered on screen
@@ -224,8 +223,17 @@ public struct LogConfig {
         case DefaultBrowserOnboardingInterstitialSkip
         case DefaultBrowserOnboardingInterstitialRemind
         case DefaultBrowserOnboardingInterstitialOpen
+        case DefaultBrowserOnboardingInterstitialOpenAgain
+        case DefaultBrowserOnboardingInterstitialContinue
+        case DefaultBrowserOnboardingInterstitialVideo
+        case DefaultBrowserOnboardingInterstitialScreenTime
         /// Promo card impression (without 2 second)
         case DefaultBrowserPromoCardImp
+        case AdBlockPromoImp
+        case AdBlockPromoClose
+        case AdBlockPromoRemind
+        case AdBlockPromoSetup
+        case AdBlockEnabled
 
         // MARK: selected suggestion
         case QuerySuggestion
@@ -266,7 +274,6 @@ public struct LogConfig {
         case SpacesDetailEntityClicked
         case SpacesDetailEditButtonClicked
         case SpacesDetailShareButtonClicked
-        case SpacesRecommendedDetailUIVisited
         case SpacesLoginRequired
         case OwnerSharedSpace
         case FollowerSharedSpace
@@ -277,6 +284,7 @@ public struct LogConfig {
         case ViewSpacesFromSheet
         case SpaceFilterClicked
         case OpenSuggestedSpace
+        case SpaceFailedToOpen
 
         // MARK: ratings card
         case RatingsRateExperience
@@ -338,6 +346,7 @@ public struct LogConfig {
         case CheatsheetQueryFallback
         case OpenCheatsheetSupport
         case CheatsheetBadURLString
+        case CheatsheetFetchError
 
         // MARK: tab group
         case tabGroupExpanded
@@ -371,6 +380,9 @@ public struct LogConfig {
 
         // MARK: Cookie Cutter
         case CookieNoticeHandled
+
+        // MARK: Archived Tabs
+        case clearArchivedTabs
     }
 
     /// Specify a comma separated string with these values to
@@ -397,6 +409,7 @@ public struct LogConfig {
         case DebugMode = "DebugMode"
         case Web3 = "Web3"
         case CookieCutter = "CookieCutter"
+        case ArchiveTab = "ArchiveTab"
     }
 
     public static var enabledLoggingCategories: Set<InteractionCategory>?
@@ -412,6 +425,8 @@ public struct LogConfig {
             || category == .PromoCard
             || category == .Web3
             || category == .CookieCutter
+            || category == .UI
+            || category == .OverflowMenu
         {
             return true
         }
@@ -453,6 +468,8 @@ public struct LogConfig {
             || category == .Notification
             || category == .Cheatsheet
             || category == .CookieCutter
+            || category == .UI
+            || category == .OverflowMenu
 
         let validInteraction =
             path == .SpacesLoginRequired || path == .SpacesRecommendedDetailUIVisited
@@ -477,6 +494,7 @@ public struct LogConfig {
         case .TurnOffIncognitoMode: return .UI
         case .ClickBack: return .UI
         case .ClickForward: return .UI
+        case .ClickClose: return .UI
         case .LongPressForward: return .UI
         case .PreviewPreferredProviderSignIn: return .UI
         case .TurnOnBlockTracking: return .UI
@@ -559,17 +577,19 @@ public struct LogConfig {
         case .DefaultBrowserOnboardingInterstitialSkip: return .FirstRun
         case .DefaultBrowserOnboardingInterstitialRemind: return .FirstRun
         case .DefaultBrowserOnboardingInterstitialOpen: return .FirstRun
+        case .DefaultBrowserOnboardingInterstitialOpenAgain: return .FirstRun
+        case .DefaultBrowserOnboardingInterstitialContinue: return .FirstRun
+        case .DefaultBrowserOnboardingInterstitialVideo: return .FirstRun
+        case .DefaultBrowserOnboardingInterstitialScreenTime: return .FirstRun
         case .DefaultBrowserInterstitialImp: return .FirstRun
         case .OpenDefaultBrowserURL: return .FirstRun
         case .StartExperiment: return .FirstRun
         case .GetStartedInWelcome: return .FirstRun
-        case .ResolvedAttributionToken: return .FirstRun
-        case .ResolvedAttributionTokenError: return .FirstRun
-        case .ResolvedAttributionTokenRetryError: return .FirstRun
         case .FirstNavigation: return .FirstRun
         case .LogErrorForInterstitialEvents: return .FirstRun
         case .NeevaAttributionRequestError: return .FirstRun
         case .DefaultBrowserInterstitialRestoreImp: return .FirstRun
+        case .SpacesRecommendedDetailUIVisited: return .FirstRun
 
         // MARK: - PromoCard
         case .PromoCardAppear: return .PromoCard
@@ -579,6 +599,11 @@ public struct LogConfig {
         case .GoToSysAppSettings: return .PromoCard
         case .DefaultBrowserPromoCardImp: return .PromoCard
         case .DismissDefaultBrowserOnboardingScreen: return .PromoCard
+        case .AdBlockPromoImp: return .PromoCard
+        case .AdBlockPromoClose: return .PromoCard
+        case .AdBlockPromoRemind: return .PromoCard
+        case .AdBlockPromoSetup: return .PromoCard
+        case .AdBlockEnabled: return .PromoCard
 
         // MARK: - Suggestions
         case .QuerySuggestion: return .Suggestions
@@ -613,7 +638,6 @@ public struct LogConfig {
         case .SpacesDetailEntityClicked: return .Spaces
         case .SpacesDetailEditButtonClicked: return .Spaces
         case .SpacesDetailShareButtonClicked: return .Spaces
-        case .SpacesRecommendedDetailUIVisited: return .Spaces
         case .SpacesLoginRequired: return .Spaces
         case .OwnerSharedSpace: return .Spaces
         case .FollowerSharedSpace: return .Spaces
@@ -623,6 +647,7 @@ public struct LogConfig {
         case .ViewSpacesFromSheet: return .Spaces
         case .SpaceFilterClicked: return .Spaces
         case .OpenSuggestedSpace: return .Spaces
+        case .SpaceFailedToOpen: return .Spaces
 
         // MARK: - RatingsCard
         case .RatingsRateExperience: return .RatingsCard
@@ -676,6 +701,7 @@ public struct LogConfig {
         case .CheatsheetQueryFallback: return .Cheatsheet
         case .OpenCheatsheetSupport: return .Cheatsheet
         case .CheatsheetBadURLString: return .Cheatsheet
+        case .CheatsheetFetchError: return .Cheatsheet
 
         // MARK: - TabGroup
         case .tabGroupExpanded: return .TabGroup
@@ -709,6 +735,8 @@ public struct LogConfig {
 
         // MARK: Cookie Cutter
         case .CookieNoticeHandled: return .CookieCutter
+        // MARK: Archived Tabs
+        case .clearArchivedTabs: return .ArchiveTab
         }
     }
 
@@ -721,6 +749,8 @@ public struct LogConfig {
         public static let NormalTabsOpened = "NormalTabsOpened"
         /// Number of incognito tabs opened
         public static let IncognitoTabsOpened = "PrivateTabsOpened"
+        /// Number of archived tabs
+        public static let NumberOfArchivedTabsTotal = "NumberOfArchivedTabsTotal"
         /// Number of zombie tabs opened
         public static let NumberOfZombieTabs = "NumberOfZombieTabs"
         /// Number of tab groups in total
@@ -749,19 +779,18 @@ public struct LogConfig {
         public static let PreviewModeQueryCount = "PreviewModeQueryCount"
         /// Session UUID v2
         public static let SessionUUIDv2 = "SessionUUIDv2"
+        /// Attribution Token Error Message
+        public static let AttributionTokenErrorToken = "AttributionTokenErrorToken"
         /// Attribution Token Error Type
         public static let AttributionTokenErrorType = "AttributionTokenErrorType"
-        /// Attribution Token Error Message
-        public static let AttributionTokenErrorMessage = "AttributionTokenErrorMessage"
-        public static let AttributionTokenErrorToken = "AttributionTokenErrorToken"
-        public static let AttributionTokenErrorDataStr = "AttributionTokenErrorDataStr"
-        public static let AttributionTokenErrorResponseCode = "AttributionTokenErrorResponseCode"
 
         /// The name of the Cookie Cutter provider that was used.
         public static let CookieCutterProviderUsed = "CookieCutterProviderUsed"
 
         /// First Run Logging Error
         public static let FirstRunLogErrorMessage = "FirstRunLogErrorMessage"
+
+        public static let InterstitialTimeSpent = "InterstitialTimeSpent"
     }
 
     public struct UIInteractionAttribute {
@@ -826,6 +855,7 @@ public struct LogConfig {
         public static let currentPageURL = "currentCheatsheetPageURL"
         public static let cheatsheetQuerySource = "cheatsheetQuerySource"
         public static let openLinkSource = "openLinkSource"
+        public static let api = "api"
 
         public enum QuerySource: String {
             case uToQ
@@ -833,9 +863,15 @@ public struct LogConfig {
             case typedQuery
             case pageURL
         }
+
+        public enum API: String {
+            case getInfo
+            case search
+        }
     }
 
     public struct TabsAttribute {
+        public static let selectedTabSection = "SelectedTabSection"
         public static let selectedTabIndex = "SelectedTabIndex"
         public static let selectedTabRow = "SelectedTabRow"
     }

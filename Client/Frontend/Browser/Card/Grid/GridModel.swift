@@ -13,21 +13,16 @@ class GridModel: ObservableObject {
 
     @Published private(set) var pickerHeight: CGFloat = UIConstants
         .TopToolbarHeightWithToolbarButtonsShowing
-    @Published var switcherState: SwitcherViews = .tabs {
-        willSet {
-            gridCanAnimate = true
-        }
-
+    @Published private(set) var switcherState: SwitcherView = .tabs {
         didSet {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.gridCanAnimate = false
-            }
-
             if case .spaces = switcherState {
                 ClientLogger.shared.logCounter(
                     .SpacesUIVisited,
                     attributes: EnvironmentHelper.shared.getAttributes())
             }
+
+            SceneDelegate.getCurrentSceneDelegate(with: tabCardModel.manager.scene)?
+                .setSceneUIState(to: .cardGrid(switcherState, tabCardModel.manager.isIncognito))
         }
     }
     @Published var gridCanAnimate = false
@@ -45,19 +40,21 @@ class GridModel: ObservableObject {
     @Published var didVerticalScroll: Int = 0
     @Published var didHorizontalScroll: Int = 0
     @Published var canResizeGrid = true
-
-    // Spaces
-    @Published var isLoading = false
+    @Published var showConfirmCloseAllTabs = false
+    @Published var numberOfTabsForCurrentState = 0
 
     private var subscriptions: Set<AnyCancellable> = []
-    private let tabMenu: TabMenu
 
     init(tabManager: TabManager, tabCardModel: TabCardModel) {
         self.tabCardModel = tabCardModel
         self.spaceCardModel = SpaceCardModel(
-            manager: NeevaUserInfo.shared.isUserLoggedIn ? .shared : .suggested)
+            manager: NeevaUserInfo.shared.isUserLoggedIn ? .shared : .suggested,
+            scene: tabManager.scene)
+        self.numberOfTabsForCurrentState = tabManager.getTabCountForCurrentType()
 
-        self.tabMenu = TabMenu(tabManager: tabManager)
+        tabManager.tabsUpdatedPublisher.sink { _ in
+            self.numberOfTabsForCurrentState = tabManager.getTabCountForCurrentType()
+        }.store(in: &subscriptions)
     }
 
     // Ensure that the selected Card is visible by scrolling it into view
@@ -69,30 +66,37 @@ class GridModel: ObservableObject {
         needsScrollToSelectedTab += 1
     }
 
-    func switchToTabs(incognito: Bool) {
-        switcherState = .tabs
+    public func setSwitcherState(to state: SwitcherView) {
+        gridCanAnimate = true
 
-        tabCardModel.manager.switchIncognitoMode(
-            incognito: incognito, fromTabTray: true, openLazyTab: false)
-    }
+        if state != switcherState {
+            switcherState = state
+        }
 
-    func switchToSpaces() {
-        switcherState = .spaces
-    }
-
-    func buildCloseAllTabsMenu(sourceView: UIView) -> UIMenu {
-        if switcherState == .tabs {
-            return UIMenu(sections: [[tabMenu.createCloseAllTabsAction(sourceView: sourceView)]])
-        } else {
-            return UIMenu()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.gridCanAnimate = false
         }
     }
 
-    func buildRecentlyClosedTabsMenu() -> UIMenu {
-        tabMenu.createRecentlyClosedTabsMenu()
+    func switchToTabs(incognito: Bool) {
+        setSwitcherState(to: .tabs)
+
+        tabCardModel.manager.switchIncognitoMode(
+            incognito: incognito, fromTabTray: true, openLazyTab: false)
+        SceneDelegate.getCurrentSceneDelegate(with: tabCardModel.manager.scene)?
+            .setSceneUIState(to: .cardGrid(switcherState, tabCardModel.manager.isIncognito))
+    }
+
+    func switchToSpaces() {
+        setSwitcherState(to: .spaces)
     }
 
     func openSpaceInDetailView(_ space: SpaceCardDetails?) {
+        if let id = space?.item?.id.id {
+            SceneDelegate.getCurrentSceneDelegate(with: tabCardModel.manager.scene)?
+                .setSceneUIState(to: .spaceDetailView(id))
+        }
+
         DispatchQueue.main.async { [self] in
             spaceCardModel.detailedSpace = space
             showingDetailView = true
@@ -101,10 +105,22 @@ class GridModel: ObservableObject {
 
     func openSpaceInDetailView(_ id: String?) {
         guard let id = id else { return }
+
+        SceneDelegate.getCurrentSceneDelegate(with: tabCardModel.manager.scene)?.setSceneUIState(
+            to: .spaceDetailView(id))
+
         DispatchQueue.main.async { [self] in
+            // Prevents duplicate calls to spaceFailedToOpen
+            var didFailToOpen = false
+
             spaceCardModel.detailedSpace = SpaceCardDetails(id: id, manager: SpaceStore.shared)
-            spaceCardModel.detailedSpace?.refresh()
             showingDetailView = true
+            spaceCardModel.detailedSpace?.refresh { wasSuccessful in
+                if !wasSuccessful && !didFailToOpen {
+                    didFailToOpen = true
+                    self.spaceFailedToOpen()
+                }
+            }
         }
     }
 
@@ -118,7 +134,23 @@ class GridModel: ObservableObject {
         spaceCardModel.detailedSpace = nil
 
         if switchToTabs {
-            switcherState = .tabs
+            setSwitcherState(to: .tabs)
         }
+
+        SceneDelegate.getCurrentSceneDelegate(with: tabCardModel.manager.scene)?.setSceneUIState(
+            to: .cardGrid(switcherState, tabCardModel.manager.isIncognito))
+    }
+
+    func spaceFailedToOpen() {
+        closeDetailView()
+
+        let toastViewManager = SceneDelegate.getBVC(with: tabCardModel.manager.scene)
+            .toastViewManager
+        ToastDefaults().showToast(
+            with:
+                "Unable to open Space. Check that the Space is shared with you and the link is correct.",
+            toastViewManager: toastViewManager)
+
+        ClientLogger.shared.logCounter(.SpaceFailedToOpen, attributes: [])
     }
 }

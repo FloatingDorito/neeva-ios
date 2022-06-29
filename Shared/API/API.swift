@@ -1526,6 +1526,8 @@ public enum InteractionType: RawRepresentable, Equatable, Hashable, CaseIterable
   case deleteSpace
   /// The user left the space
   case leaveSpace
+  /// The user pinned the space
+  case pinSpace
   /// The user accepted a space sharing invite
   case acceptSpaceInvite
   /// The user declined a space sharing invite
@@ -1620,6 +1622,7 @@ public enum InteractionType: RawRepresentable, Equatable, Hashable, CaseIterable
       case "EditSpace": self = .editSpace
       case "DeleteSpace": self = .deleteSpace
       case "LeaveSpace": self = .leaveSpace
+      case "PinSpace": self = .pinSpace
       case "AcceptSpaceInvite": self = .acceptSpaceInvite
       case "DeclineSpaceInvite": self = .declineSpaceInvite
       case "ViewOriginalSnapshotPage": self = .viewOriginalSnapshotPage
@@ -1681,6 +1684,7 @@ public enum InteractionType: RawRepresentable, Equatable, Hashable, CaseIterable
       case .editSpace: return "EditSpace"
       case .deleteSpace: return "DeleteSpace"
       case .leaveSpace: return "LeaveSpace"
+      case .pinSpace: return "PinSpace"
       case .acceptSpaceInvite: return "AcceptSpaceInvite"
       case .declineSpaceInvite: return "DeclineSpaceInvite"
       case .viewOriginalSnapshotPage: return "ViewOriginalSnapshotPage"
@@ -1742,6 +1746,7 @@ public enum InteractionType: RawRepresentable, Equatable, Hashable, CaseIterable
       case (.editSpace, .editSpace): return true
       case (.deleteSpace, .deleteSpace): return true
       case (.leaveSpace, .leaveSpace): return true
+      case (.pinSpace, .pinSpace): return true
       case (.acceptSpaceInvite, .acceptSpaceInvite): return true
       case (.declineSpaceInvite, .declineSpaceInvite): return true
       case (.viewOriginalSnapshotPage, .viewOriginalSnapshotPage): return true
@@ -1804,6 +1809,7 @@ public enum InteractionType: RawRepresentable, Equatable, Hashable, CaseIterable
       .editSpace,
       .deleteSpace,
       .leaveSpace,
+      .pinSpace,
       .acceptSpaceInvite,
       .declineSpaceInvite,
       .viewOriginalSnapshotPage,
@@ -4701,6 +4707,35 @@ public struct ClaimGeneratedItemInput: GraphQLMapConvertible {
   }
 }
 
+public struct PinSpaceInput: GraphQLMapConvertible {
+  public var graphQLMap: GraphQLMap
+
+  /// - Parameters:
+  ///   - id
+  ///   - isPinned
+  public init(id: String, isPinned: Swift.Optional<Bool?> = nil) {
+    graphQLMap = ["id": id, "isPinned": isPinned]
+  }
+
+  public var id: String {
+    get {
+      return graphQLMap["id"] as! String
+    }
+    set {
+      graphQLMap.updateValue(newValue, forKey: "id")
+    }
+  }
+
+  public var isPinned: Swift.Optional<Bool?> {
+    get {
+      return graphQLMap["isPinned"] as? Swift.Optional<Bool?> ?? Swift.Optional<Bool?>.none
+    }
+    set {
+      graphQLMap.updateValue(newValue, forKey: "isPinned")
+    }
+  }
+}
+
 public enum QuerySuggestionType: RawRepresentable, Equatable, Hashable, CaseIterable, Apollo.JSONDecodable, Apollo.JSONEncodable {
   public typealias RawValue = String
   case standard
@@ -5333,6 +5368,25 @@ public final class CheatsheetInfoQuery: GraphQLQuery {
           Title
           Domain
           Snippet
+          Forum {
+            __typename
+            url
+            source
+            domain
+            score
+            date
+            title
+            body
+            percentUpvoted
+            numComments
+            comments {
+              __typename
+              url
+              score
+              date
+              body
+            }
+          }
         }
       }
     }
@@ -5340,7 +5394,7 @@ public final class CheatsheetInfoQuery: GraphQLQuery {
 
   public let operationName: String = "CheatsheetInfo"
 
-  public let operationIdentifier: String? = "0d5e9df6b7b5107c5c840747e13947eec0f6a3dcca920297ddceed901f4eefdc"
+  public let operationIdentifier: String? = "f043892504c312b6f8419efc08215a434c0bd80fda31d384d1efce9fa916d558"
 
   public var input: String
   public var title: String?
@@ -6120,6 +6174,7 @@ public final class CheatsheetInfoQuery: GraphQLQuery {
             GraphQLField("Title", type: .scalar(String.self)),
             GraphQLField("Domain", type: .scalar(String.self)),
             GraphQLField("Snippet", type: .scalar(String.self)),
+            GraphQLField("Forum", type: .object(Forum.selections)),
           ]
         }
 
@@ -6129,8 +6184,8 @@ public final class CheatsheetInfoQuery: GraphQLQuery {
           self.resultMap = unsafeResultMap
         }
 
-        public init(url: String? = nil, title: String? = nil, domain: String? = nil, snippet: String? = nil) {
-          self.init(unsafeResultMap: ["__typename": "BacklinkEntry", "URL": url, "Title": title, "Domain": domain, "Snippet": snippet])
+        public init(url: String? = nil, title: String? = nil, domain: String? = nil, snippet: String? = nil, forum: Forum? = nil) {
+          self.init(unsafeResultMap: ["__typename": "BacklinkEntry", "URL": url, "Title": title, "Domain": domain, "Snippet": snippet, "Forum": forum.flatMap { (value: Forum) -> ResultMap in value.resultMap }])
         }
 
         public var __typename: String {
@@ -6175,6 +6230,213 @@ public final class CheatsheetInfoQuery: GraphQLQuery {
           }
           set {
             resultMap.updateValue(newValue, forKey: "Snippet")
+          }
+        }
+
+        public var forum: Forum? {
+          get {
+            return (resultMap["Forum"] as? ResultMap).flatMap { Forum(unsafeResultMap: $0) }
+          }
+          set {
+            resultMap.updateValue(newValue?.resultMap, forKey: "Forum")
+          }
+        }
+
+        public struct Forum: GraphQLSelectionSet {
+          public static let possibleTypes: [String] = ["WebForum"]
+
+          public static var selections: [GraphQLSelection] {
+            return [
+              GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+              GraphQLField("url", type: .scalar(String.self)),
+              GraphQLField("source", type: .scalar(String.self)),
+              GraphQLField("domain", type: .scalar(String.self)),
+              GraphQLField("score", type: .scalar(Int.self)),
+              GraphQLField("date", type: .scalar(String.self)),
+              GraphQLField("title", type: .scalar(String.self)),
+              GraphQLField("body", type: .scalar(String.self)),
+              GraphQLField("percentUpvoted", type: .scalar(Int.self)),
+              GraphQLField("numComments", type: .scalar(Int.self)),
+              GraphQLField("comments", type: .list(.nonNull(.object(Comment.selections)))),
+            ]
+          }
+
+          public private(set) var resultMap: ResultMap
+
+          public init(unsafeResultMap: ResultMap) {
+            self.resultMap = unsafeResultMap
+          }
+
+          public init(url: String? = nil, source: String? = nil, domain: String? = nil, score: Int? = nil, date: String? = nil, title: String? = nil, body: String? = nil, percentUpvoted: Int? = nil, numComments: Int? = nil, comments: [Comment]? = nil) {
+            self.init(unsafeResultMap: ["__typename": "WebForum", "url": url, "source": source, "domain": domain, "score": score, "date": date, "title": title, "body": body, "percentUpvoted": percentUpvoted, "numComments": numComments, "comments": comments.flatMap { (value: [Comment]) -> [ResultMap] in value.map { (value: Comment) -> ResultMap in value.resultMap } }])
+          }
+
+          public var __typename: String {
+            get {
+              return resultMap["__typename"]! as! String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "__typename")
+            }
+          }
+
+          public var url: String? {
+            get {
+              return resultMap["url"] as? String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "url")
+            }
+          }
+
+          public var source: String? {
+            get {
+              return resultMap["source"] as? String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "source")
+            }
+          }
+
+          public var domain: String? {
+            get {
+              return resultMap["domain"] as? String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "domain")
+            }
+          }
+
+          public var score: Int? {
+            get {
+              return resultMap["score"] as? Int
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "score")
+            }
+          }
+
+          public var date: String? {
+            get {
+              return resultMap["date"] as? String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "date")
+            }
+          }
+
+          public var title: String? {
+            get {
+              return resultMap["title"] as? String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "title")
+            }
+          }
+
+          public var body: String? {
+            get {
+              return resultMap["body"] as? String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "body")
+            }
+          }
+
+          public var percentUpvoted: Int? {
+            get {
+              return resultMap["percentUpvoted"] as? Int
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "percentUpvoted")
+            }
+          }
+
+          public var numComments: Int? {
+            get {
+              return resultMap["numComments"] as? Int
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "numComments")
+            }
+          }
+
+          public var comments: [Comment]? {
+            get {
+              return (resultMap["comments"] as? [ResultMap]).flatMap { (value: [ResultMap]) -> [Comment] in value.map { (value: ResultMap) -> Comment in Comment(unsafeResultMap: value) } }
+            }
+            set {
+              resultMap.updateValue(newValue.flatMap { (value: [Comment]) -> [ResultMap] in value.map { (value: Comment) -> ResultMap in value.resultMap } }, forKey: "comments")
+            }
+          }
+
+          public struct Comment: GraphQLSelectionSet {
+            public static let possibleTypes: [String] = ["WebForumComment"]
+
+            public static var selections: [GraphQLSelection] {
+              return [
+                GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+                GraphQLField("url", type: .scalar(String.self)),
+                GraphQLField("score", type: .scalar(Int.self)),
+                GraphQLField("date", type: .scalar(String.self)),
+                GraphQLField("body", type: .scalar(String.self)),
+              ]
+            }
+
+            public private(set) var resultMap: ResultMap
+
+            public init(unsafeResultMap: ResultMap) {
+              self.resultMap = unsafeResultMap
+            }
+
+            public init(url: String? = nil, score: Int? = nil, date: String? = nil, body: String? = nil) {
+              self.init(unsafeResultMap: ["__typename": "WebForumComment", "url": url, "score": score, "date": date, "body": body])
+            }
+
+            public var __typename: String {
+              get {
+                return resultMap["__typename"]! as! String
+              }
+              set {
+                resultMap.updateValue(newValue, forKey: "__typename")
+              }
+            }
+
+            public var url: String? {
+              get {
+                return resultMap["url"] as? String
+              }
+              set {
+                resultMap.updateValue(newValue, forKey: "url")
+              }
+            }
+
+            public var score: Int? {
+              get {
+                return resultMap["score"] as? Int
+              }
+              set {
+                resultMap.updateValue(newValue, forKey: "score")
+              }
+            }
+
+            public var date: String? {
+              get {
+                return resultMap["date"] as? String
+              }
+              set {
+                resultMap.updateValue(newValue, forKey: "date")
+              }
+            }
+
+            public var body: String? {
+              get {
+                return resultMap["body"] as? String
+              }
+              set {
+                resultMap.updateValue(newValue, forKey: "body")
+              }
+            }
           }
         }
       }
@@ -8167,7 +8429,7 @@ public final class SearchQuery: GraphQLQuery {
           }
 
           public struct SubResult: GraphQLSelectionSet {
-            public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web"]
+            public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web", "UGCDiscussion"]
 
             public static var selections: [GraphQLSelection] {
               return [
@@ -8476,6 +8738,10 @@ public final class SearchQuery: GraphQLQuery {
 
             public static func makeWeb() -> SubResult {
               return SubResult(unsafeResultMap: ["__typename": "Web"])
+            }
+
+            public static func makeUGCDiscussion() -> SubResult {
+              return SubResult(unsafeResultMap: ["__typename": "UGCDiscussion"])
             }
 
             public static func makeNews(news: AsNews.News? = nil) -> SubResult {
@@ -8824,7 +9090,7 @@ public final class SearchQuery: GraphQLQuery {
           }
 
           public struct TypeSpecific: GraphQLSelectionSet {
-            public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web"]
+            public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web", "UGCDiscussion"]
 
             public static var selections: [GraphQLSelection] {
               return [
@@ -9105,6 +9371,10 @@ public final class SearchQuery: GraphQLQuery {
 
             public static func makeWeather() -> TypeSpecific {
               return TypeSpecific(unsafeResultMap: ["__typename": "Weather"])
+            }
+
+            public static func makeUGCDiscussion() -> TypeSpecific {
+              return TypeSpecific(unsafeResultMap: ["__typename": "UGCDiscussion"])
             }
 
             public static func makeRichEntity(richEntity: AsRichEntity.RichEntity? = nil) -> TypeSpecific {
@@ -14549,6 +14819,7 @@ public final class ListSpacesQuery: GraphQLQuery {
             }
             resultCount
             isDefaultSpace
+            isPinned
           }
         }
       }
@@ -14557,7 +14828,7 @@ public final class ListSpacesQuery: GraphQLQuery {
 
   public let operationName: String = "ListSpaces"
 
-  public let operationIdentifier: String? = "cc92fe7546f431b5888b47b5bca2033a8868098b2444926fefb350304613fd00"
+  public let operationIdentifier: String? = "5b0c40acfca2b540c9bab44c5b09cf64ee61a53ea8d424a0faeefbf6915c32fe"
 
   public var kind: ListSpacesKind?
 
@@ -14752,6 +15023,7 @@ public final class ListSpacesQuery: GraphQLQuery {
               GraphQLField("thumbnailSize", type: .object(ThumbnailSize.selections)),
               GraphQLField("resultCount", type: .scalar(Int.self)),
               GraphQLField("isDefaultSpace", type: .scalar(Bool.self)),
+              GraphQLField("isPinned", type: .scalar(Bool.self)),
             ]
           }
 
@@ -14761,8 +15033,8 @@ public final class ListSpacesQuery: GraphQLQuery {
             self.resultMap = unsafeResultMap
           }
 
-          public init(name: String? = nil, lastModifiedTs: String? = nil, owner: Owner? = nil, notifications: [Notification]? = nil, userAcl: UserAcl? = nil, acl: [Acl]? = nil, hasPublicAcl: Bool? = nil, thumbnail: String? = nil, thumbnailSize: ThumbnailSize? = nil, resultCount: Int? = nil, isDefaultSpace: Bool? = nil) {
-            self.init(unsafeResultMap: ["__typename": "SpaceData", "name": name, "lastModifiedTs": lastModifiedTs, "owner": owner.flatMap { (value: Owner) -> ResultMap in value.resultMap }, "notifications": notifications.flatMap { (value: [Notification]) -> [ResultMap] in value.map { (value: Notification) -> ResultMap in value.resultMap } }, "userACL": userAcl.flatMap { (value: UserAcl) -> ResultMap in value.resultMap }, "acl": acl.flatMap { (value: [Acl]) -> [ResultMap] in value.map { (value: Acl) -> ResultMap in value.resultMap } }, "hasPublicACL": hasPublicAcl, "thumbnail": thumbnail, "thumbnailSize": thumbnailSize.flatMap { (value: ThumbnailSize) -> ResultMap in value.resultMap }, "resultCount": resultCount, "isDefaultSpace": isDefaultSpace])
+          public init(name: String? = nil, lastModifiedTs: String? = nil, owner: Owner? = nil, notifications: [Notification]? = nil, userAcl: UserAcl? = nil, acl: [Acl]? = nil, hasPublicAcl: Bool? = nil, thumbnail: String? = nil, thumbnailSize: ThumbnailSize? = nil, resultCount: Int? = nil, isDefaultSpace: Bool? = nil, isPinned: Bool? = nil) {
+            self.init(unsafeResultMap: ["__typename": "SpaceData", "name": name, "lastModifiedTs": lastModifiedTs, "owner": owner.flatMap { (value: Owner) -> ResultMap in value.resultMap }, "notifications": notifications.flatMap { (value: [Notification]) -> [ResultMap] in value.map { (value: Notification) -> ResultMap in value.resultMap } }, "userACL": userAcl.flatMap { (value: UserAcl) -> ResultMap in value.resultMap }, "acl": acl.flatMap { (value: [Acl]) -> [ResultMap] in value.map { (value: Acl) -> ResultMap in value.resultMap } }, "hasPublicACL": hasPublicAcl, "thumbnail": thumbnail, "thumbnailSize": thumbnailSize.flatMap { (value: ThumbnailSize) -> ResultMap in value.resultMap }, "resultCount": resultCount, "isDefaultSpace": isDefaultSpace, "isPinned": isPinned])
           }
 
           public var __typename: String {
@@ -14870,6 +15142,16 @@ public final class ListSpacesQuery: GraphQLQuery {
             }
             set {
               resultMap.updateValue(newValue, forKey: "isDefaultSpace")
+            }
+          }
+
+          /// Whether the space should be pinned to the top of the spaces list
+          public var isPinned: Bool? {
+            get {
+              return resultMap["isPinned"] as? Bool
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "isPinned")
             }
           }
 
@@ -16758,7 +17040,7 @@ public final class GetRelatedSpacesQuery: GraphQLQuery {
                   }
 
                   public struct TypeSpecific: GraphQLSelectionSet {
-                    public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web"]
+                    public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web", "UGCDiscussion"]
 
                     public static var selections: [GraphQLSelection] {
                       return [
@@ -17055,6 +17337,10 @@ public final class GetRelatedSpacesQuery: GraphQLQuery {
 
                     public static func makeWeather() -> TypeSpecific {
                       return TypeSpecific(unsafeResultMap: ["__typename": "Weather"])
+                    }
+
+                    public static func makeUGCDiscussion() -> TypeSpecific {
+                      return TypeSpecific(unsafeResultMap: ["__typename": "UGCDiscussion"])
                     }
 
                     public static func makeTechDoc(techDoc: AsTechDoc.TechDoc? = nil) -> TypeSpecific {
@@ -19179,7 +19465,7 @@ public final class GetSpacesDataQuery: GraphQLQuery {
                 }
 
                 public struct TypeSpecific: GraphQLSelectionSet {
-                  public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web"]
+                  public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web", "UGCDiscussion"]
 
                   public static var selections: [GraphQLSelection] {
                     return [
@@ -19476,6 +19762,10 @@ public final class GetSpacesDataQuery: GraphQLQuery {
 
                   public static func makeWeather() -> TypeSpecific {
                     return TypeSpecific(unsafeResultMap: ["__typename": "Weather"])
+                  }
+
+                  public static func makeUGCDiscussion() -> TypeSpecific {
+                    return TypeSpecific(unsafeResultMap: ["__typename": "UGCDiscussion"])
                   }
 
                   public static func makeTechDoc(techDoc: AsTechDoc.TechDoc? = nil) -> TypeSpecific {
@@ -21429,6 +21719,60 @@ public final class ClaimGeneratedItemMutation: GraphQLMutation {
   }
 }
 
+public final class PinSpaceMutation: GraphQLMutation {
+  /// The raw GraphQL definition of this operation.
+  public let operationDefinition: String =
+    """
+    mutation PinSpace($input: PinSpaceInput!) {
+      pinSpace(input: $input)
+    }
+    """
+
+  public let operationName: String = "PinSpace"
+
+  public let operationIdentifier: String? = "24e96d732de4246f0fe83132795a819f3fc9282e9997373368abffc7b6fc73ea"
+
+  public var input: PinSpaceInput
+
+  public init(input: PinSpaceInput) {
+    self.input = input
+  }
+
+  public var variables: GraphQLMap? {
+    return ["input": input]
+  }
+
+  public struct Data: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["Mutation"]
+
+    public static var selections: [GraphQLSelection] {
+      return [
+        GraphQLField("pinSpace", arguments: ["input": GraphQLVariable("input")], type: .nonNull(.scalar(Bool.self))),
+      ]
+    }
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(pinSpace: Bool) {
+      self.init(unsafeResultMap: ["__typename": "Mutation", "pinSpace": pinSpace])
+    }
+
+    /// API to pin/unpin a space.
+    public var pinSpace: Bool {
+      get {
+        return resultMap["pinSpace"]! as! Bool
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "pinSpace")
+      }
+    }
+  }
+}
+
 public final class SuggestionsQuery: GraphQLQuery {
   /// The raw GraphQL definition of this operation.
   public let operationDefinition: String =
@@ -23309,7 +23653,7 @@ public struct SpacesMetadata: GraphQLFragment {
         }
 
         public struct TypeSpecific: GraphQLSelectionSet {
-          public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web"]
+          public static let possibleTypes: [String] = ["AgendaView", "BillsView", "Computation", "Contact", "Currency", "Dictionary", "Doc", "DocView", "Email", "EmailActivity", "Entity", "Event", "EventView", "ExternalSearchProvider", "Flight", "FeedDocsView", "FeedGHView", "Image", "IpAddress", "Issue", "Journey", "KnowledgeGraphAnswer", "Lyrics", "Message", "MovieList", "MovieShowtimes", "NeevaDefinition", "News", "NewsItem", "NewsletterView", "NoAdsBanner", "PackageTracking", "PersonView", "Place", "PlaceList", "PreviewModeCTA", "PriceFollow", "ProductCategoryOverview", "ProductQNA", "ProductReviews", "ProductClusters", "ProductBrowse", "ProgrammingDoc", "Promo", "ReceiptView", "RecipeResult", "RecipeBlock", "FeaturedRecipeBlock", "FeaturedVideoRecipeBlock", "Redirect", "RelatedSearches", "RelatedQnA", "RichEntity", "PPRanking", "ShippingView", "Social", "SpaceView", "SpaceBlock", "SportsCard", "Stock", "TechDoc", "TechQNA", "TimeCalculation", "Timezone", "TimezoneDifference", "Token", "Translation", "TravelView", "Tweet", "Vanity", "Video", "WalletTS", "Weather", "Web", "UGCDiscussion"]
 
           public static var selections: [GraphQLSelection] {
             return [
@@ -23606,6 +23950,10 @@ public struct SpacesMetadata: GraphQLFragment {
 
           public static func makeWeather() -> TypeSpecific {
             return TypeSpecific(unsafeResultMap: ["__typename": "Weather"])
+          }
+
+          public static func makeUGCDiscussion() -> TypeSpecific {
+            return TypeSpecific(unsafeResultMap: ["__typename": "UGCDiscussion"])
           }
 
           public static func makeTechDoc(techDoc: AsTechDoc.TechDoc? = nil) -> TypeSpecific {

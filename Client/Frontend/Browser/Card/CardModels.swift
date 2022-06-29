@@ -45,31 +45,43 @@ class TabCardModel: CardModel {
     private(set) var allTabGroupDetails: [TabGroupCardDetails] = []
 
     @Default(.tabGroupExpanded) private var tabGroupExpanded: Set<String>
+    @Default(.archivedTabsDuration) var archivedTabsDuration
     var needsUpdateRows: Bool = false
     static let todayRowHeaderID: String = "today-header"
+    static let yesterdayRowHeaderID: String = "yesterday-header"
     static let lastweekRowHeaderID: String = "lastWeek-header"
+    static let lastMonthRowHeaderID: String = "lastMonth-header"
+    static let olderRowHeaderID: String = "older-header"
 
     // Find Tab
-    @Published var isSearchingForTabs: Bool = false
+    @Published var isSearchingForTabs: Bool = false {
+        didSet {
+            // Reset the filter whenever the state changes.
+            tabSearchFilter = ""
+        }
+    }
     @Published var tabSearchFilter = "" {
         didSet {
-            updateRowsIfNeeded(force: true)
+            if oldValue != tabSearchFilter {
+                updateIfNeeded(forceUpdateRows: true)
+            }
         }
     }
 
     private(set) var tabsDidChange = false
 
     private func updateRows() {
-        if FeatureFlag[.enableTimeBasedSwitcher] {
-            timeBasedIncognitoRows[.today] = buildRows(incognito: true, byTime: .today)
-            timeBasedNormalRows[.today] = buildRows(incognito: false, byTime: .today)
-            timeBasedIncognitoRows[.lastWeek] = buildRows(
-                incognito: true, byTime: .lastWeek)
-            timeBasedNormalRows[.lastWeek] = buildRows(
-                incognito: false, byTime: .lastWeek)
-        } else {
-            incognitoRows = buildRows(incognito: true)
-            normalRows = buildRows(incognito: false)
+        timeBasedNormalRows[.today] = buildRows(incognito: false, byTime: .today)
+        timeBasedNormalRows[.yesterday] = buildRows(incognito: false, byTime: .yesterday)
+        timeBasedNormalRows[.lastWeek] = buildRows(
+            incognito: false, byTime: .lastWeek)
+        // TODO: in the future, we might apply time-based treatments to incognito mode.
+        incognitoRows = buildRows(incognito: true)
+        if archivedTabsDuration == .month {
+            timeBasedNormalRows[.lastMonth] = buildRows(incognito: false, byTime: .lastMonth)
+        } else if archivedTabsDuration == .forever {
+            timeBasedNormalRows[.lastMonth] = buildRows(incognito: false, byTime: .lastMonth)
+            timeBasedNormalRows[.overAMonth] = buildRows(incognito: false, byTime: .overAMonth)
         }
 
         // Defer signaling until after we have finished updating. This way our state is
@@ -77,8 +89,8 @@ class TabCardModel: CardModel {
         self.objectWillChange.send()
     }
 
-    func updateRowsIfNeeded(force: Bool = false) {
-        if needsUpdateRows || force {
+    func updateIfNeeded(forceUpdateRows: Bool = false) {
+        if needsUpdateRows || forceUpdateRows {
             needsUpdateRows = false
             updateRows()
         }
@@ -87,17 +99,26 @@ class TabCardModel: CardModel {
     func getRows(incognito: Bool) -> [Row] {
         var returnValue: [Row] = []
 
-        if FeatureFlag[.enableTimeBasedSwitcher] {
-            if incognito {
-                returnValue =
-                    (timeBasedIncognitoRows[.today] ?? [])
-                    + (timeBasedIncognitoRows[.lastWeek] ?? [])
-            } else {
-                returnValue =
-                    (timeBasedNormalRows[.today] ?? []) + (timeBasedNormalRows[.lastWeek] ?? [])
+        func getOlderRows() -> [Row] {
+            if archivedTabsDuration == .month {
+                return (timeBasedNormalRows[.lastMonth] ?? [])
             }
+            if archivedTabsDuration == .forever {
+                return (timeBasedNormalRows[.lastMonth] ?? [])
+                    + (timeBasedNormalRows[.overAMonth] ?? [])
+            }
+            return []
+        }
+
+        if incognito {
+            returnValue =
+                // TODO: in the future, we might apply time-based treatments to incognito mode.
+                incognitoRows
         } else {
-            returnValue = incognito ? incognitoRows : normalRows
+            returnValue =
+                (timeBasedNormalRows[.today] ?? []) + (timeBasedNormalRows[.yesterday] ?? [])
+                + (timeBasedNormalRows[.lastWeek] ?? [])
+                + getOlderRows()
         }
 
         for id in 0..<returnValue.count {
@@ -153,9 +174,18 @@ class TabCardModel: CardModel {
                 case .tabGroupGridRow(let details, let range):
                     return details.allDetails[range].reduce("") { $0 + $1.id + ":" }
                 case .sectionHeader(let timeFilter):
-                    return timeFilter.rawValue == "Last Week"
-                        ? TabCardModel.lastweekRowHeaderID
-                        : TabCardModel.todayRowHeaderID
+                    switch timeFilter {
+                    case .today:
+                        return TabCardModel.todayRowHeaderID
+                    case .yesterday:
+                        return TabCardModel.yesterdayRowHeaderID
+                    case .lastWeek:
+                        return lastweekRowHeaderID
+                    case .lastMonth:
+                        return lastMonthRowHeaderID
+                    case .overAMonth:
+                        return olderRowHeaderID
+                    }
                 }
             }
 
@@ -184,6 +214,15 @@ class TabCardModel: CardModel {
                     return 0
                 }
             }
+
+            var isTabGroup: Bool {
+                switch self {
+                case .tabGroupInline, .tabGroupGridRow:
+                    return true
+                default:
+                    return false
+                }
+            }
         }
         var cells: [Cell]
         var index: Int?
@@ -199,7 +238,7 @@ class TabCardModel: CardModel {
             let tabGroup = manager.getTabGroup(for: tab)
             return (tabGroup == nil || isRepresentativeTab(tab, in: tabGroup!))
                 && tab.isIncognito == incognito
-                && (FeatureFlag[.enableTimeBasedSwitcher]
+                && (!incognito
                     ? (tabGroup != nil
                         ? tabGroup!.wasLastExecuted(byTime!) : tab.wasLastExecuted(byTime!)) : true)
                 && tabIncludedInSearch(tabCard)
@@ -326,7 +365,7 @@ class TabCardModel: CardModel {
             !$0.cells.isEmpty
         }
 
-        if FeatureFlag[.enableTimeBasedSwitcher] && !rows.isEmpty, let byTime = byTime {
+        if !rows.isEmpty, let byTime = byTime {
             rows.insert(Row(cells: [Row.Cell.sectionHeader(byTime)]), at: 0)
         }
 
@@ -334,16 +373,16 @@ class TabCardModel: CardModel {
     }
 
     func onDataUpdated() {
-        allDetails = manager.getAll()
-            .map { TabCardDetails(tab: $0, manager: manager) }
+        allDetails = manager.activeTabs.map { TabCardDetails(tab: $0, manager: manager) }
 
         if FeatureFlag[.reverseChronologicalOrdering] {
             allDetails = allDetails.reversed()
         }
 
-        allTabGroupDetails = manager.tabGroups.map { id, group in
-            TabGroupCardDetails(tabGroup: group, tabManager: manager)
-        }
+        allTabGroupDetails =
+            manager.activeTabGroups.map { id, group in
+                TabGroupCardDetails(tabGroup: group, tabManager: manager)
+            }
 
         // When the number of tabs in a tab group decreases and makes the group
         // unable to expand, we remove the group from the expanded list. A side-effect
@@ -397,7 +436,10 @@ class TabCardModel: CardModel {
     }
 
     func buildRowsForTesting() -> [Row] {
-        buildRows(incognito: false)
+        timeBasedNormalRows[.today] = buildRows(incognito: false, byTime: .today)
+        timeBasedNormalRows[.lastWeek] = buildRows(
+            incognito: false, byTime: .lastWeek)
+        return getRows(incognito: false)
     }
 
     // MARK: init
@@ -415,17 +457,19 @@ class TabCardModel: CardModel {
             }
         }.store(in: &subscription)
 
-        if FeatureFlag[.enableTimeBasedSwitcher] {
-            manager.selectedTabPublisher.sink { [weak self] tab in
-                guard let self = self, let _ = tab else {
-                    return
-                }
-                self.needsUpdateRows = true
-            }.store(in: &subscription)
-        }
+        manager.selectedTabPublisher.sink { [weak self] tab in
+            guard let self = self, let _ = tab else {
+                return
+            }
+            self.needsUpdateRows = true
+        }.store(in: &subscription)
 
         _tabGroupExpanded.publisher.sink { [weak self] _ in
             self?.updateRows()
+        }.store(in: &subscription)
+
+        manager.updateArchivedTabsPublisher.sink { [weak self] _ in
+            self?.onDataUpdated()
         }.store(in: &subscription)
     }
 }
@@ -466,20 +510,23 @@ class SpaceCardModel: CardModel {
     @Published private(set) var allDetailsWithExclusionList: [SpaceCardDetails] = []
     @Published var detailedSpace: SpaceCardDetails? {
         didSet {
-            guard detailedSpace == nil else {
+            if let detailedSpace = detailedSpace {
                 ClientLogger.shared.logCounter(
                     .SpacesDetailUIVisited,
                     attributes:
-                        getLogCounterAttributesForSpaces(details: detailedSpace!))
+                        getLogCounterAttributesForSpaces(details: detailedSpace))
+
                 // Collect separately. View definition depends on aggregate stats policy
                 ClientLogger.shared.logCounter(
                     .space_app_view,
                     attributes:
-                        getLogCounterAttributesForSpaces(details: detailedSpace!))
-                return
-            }
+                        getLogCounterAttributesForSpaces(details: detailedSpace))
 
-            if let id = spaceNeedsRefresh {
+                if let scene = scene, let id = detailedSpace.item?.id.id {
+                    SceneDelegate.getCurrentSceneDelegate(with: scene)?.setSceneUIState(
+                        to: .spaceDetailView(id))
+                }
+            } else if let id = spaceNeedsRefresh {
                 manager.refreshSpace(spaceID: id)
                 spaceNeedsRefresh = nil
 
@@ -488,44 +535,38 @@ class SpaceCardModel: CardModel {
     }
     @Published var updatedItemIDs = [String]()
     @Published var filterState: SpaceFilterState = .allSpaces
-
-    var detailsMatchingFilter: [SpaceCardDetails] {
-        let spaces = allDetails.filter {
-            NeevaFeatureFlags[.enableSpaceDigestCard] || $0.id != SpaceStore.dailyDigestID
-        }
-
-        switch filterState {
-        case .allSpaces:
-            return spaces
-        case .ownedByMe:
-            return spaces.filter { $0.item?.userACL == .owner }
-        }
-    }
+    @Published var sortType: SpaceSortState = .updatedDate
 
     var thumbnailURLCandidates = [URL: [URL]]()
     private var anyCancellable: AnyCancellable? = nil
     private var recommendationSubscription: AnyCancellable? = nil
     private var editingSubscription: AnyCancellable? = nil
+    private var mutationSubscription: AnyCancellable? = nil
     private var detailsSubscriptions: Set<AnyCancellable> = Set()
     private var spaceNeedsRefresh: String? = nil
+    private var scene: UIScene?
 
-    init(manager: SpaceStore = SpaceStore.shared) {
+    init(manager: SpaceStore = SpaceStore.shared, scene: UIScene?) {
         self.manager = manager
-        self.manager.spotlightEventDelegate = SpotlightLogger.shared
+        self.scene = scene
+
+        manager.spotlightEventDelegate = SpotlightLogger.shared
 
         NeevaUserInfo.shared.$isUserLoggedIn.sink { isLoggedIn in
             self.manager = isLoggedIn ? .shared : .suggested
             self.listenManagerState()
+            self.listenSpaceMutations()
             DispatchQueue.main.async {
                 self.manager.refresh()
             }
         }.store(in: &detailsSubscriptions)
         listenManagerState()
+        listenSpaceMutations()
     }
 
     private func listenManagerState() {
         self.anyCancellable = manager.$state.sink { [weak self] state in
-            guard let self = self, self.detailedSpace == nil, case .ready = state,
+            guard let self = self, case .ready = state,
                 self.manager.updatedSpacesFromLastRefresh.count > 0
             else {
                 return
@@ -556,6 +597,17 @@ class SpaceCardModel: CardModel {
                 self.objectWillChange.send()
             }
         }
+    }
+
+    private func listenSpaceMutations() {
+        mutationSubscription = manager.spaceLocalMutation.sink { [weak self] space in
+            guard let self = self else { return }
+            if let space = space {
+                let spaceCardDetails = SpaceCardDetails(space: space, manager: self.manager)
+                self.allDetails.append(spaceCardDetails)
+            }
+        }
+
     }
 
     func onDataUpdated() {
@@ -722,7 +774,7 @@ class SpaceCardModel: CardModel {
                 switch state {
                 case .success:
                     self.editingSubscription?.cancel()
-                    self.manager.refresh()
+                    self.manager.deleteSpace(with: spaceID)
                 case .failure:
                     self.editingSubscription?.cancel()
                 case .initial:
@@ -735,7 +787,7 @@ class SpaceCardModel: CardModel {
                 switch state {
                 case .success:
                     self.editingSubscription?.cancel()
-                    self.manager.refresh()
+                    self.manager.deleteSpace(with: spaceID)
                 case .failure:
                     self.editingSubscription?.cancel()
                 case .initial:

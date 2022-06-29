@@ -35,11 +35,8 @@ struct GeneralSettingsSection: View {
                 .environmentObject(
                     InterstitialViewModel(
                         trigger: .defaultBrowserSettings,
-                        showRemindButton:
-                            NeevaExperiment.arm(for: .defaultBrowserChangeButton) == .changeButton,
-                        inButtonTextExperiment:
-                            NeevaExperiment.arm(for: .defaultBrowserChangeButton) == .changeButton,
-                        showCloseButton: false
+                        showCloseButton: false,
+                        onboardingState: .openedSettingsState
                     )
                 )
                 .onAppear {
@@ -67,13 +64,12 @@ struct GeneralSettingsSection: View {
                 description: "When Closing All Tabs"
             )
         }
-        if FeatureFlag[.enableArchivedTabsView] {
-            NavigationLink(isActive: $showArchivedTabsSettings) {
-                ArchivedTabSettings()
-            } label: {
-                Text("Keep Tabs")
-            }
-        }
+
+        NavigationLink(isActive: $showArchivedTabsSettings) {
+            ArchivedTabSettings()
+        } label: {
+            Text("Keep Tabs")
+        }.id("archived-tabs-setting")
     }
 }
 

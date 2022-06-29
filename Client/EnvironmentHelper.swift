@@ -56,15 +56,18 @@ public class EnvironmentHelper {
     public func getAttributes() -> [ClientLogCounterAttribute] {
         var numOfNormalTabs = 0
         var numOfIncognitoTabs = 0
+        var numOfArchivedTabs = 0
         TabManager.all.forEach { tabManager in
             numOfNormalTabs += tabManager.normalTabs.count
             numOfIncognitoTabs += tabManager.incognitoTabs.count
+            numOfArchivedTabs += tabManager.archivedTabs.count
         }
 
         var numOfChildTabs = 0
         var numOfTabGroups = 0
         TabManager.all.forEach { tabManager in
-            numOfTabGroups += tabManager.tabGroups.count
+            // In the future, we may also want to log archived tab groups.
+            numOfTabGroups += tabManager.activeTabGroups.count
             numOfChildTabs += tabManager.childTabs.count
         }
 
@@ -77,6 +80,10 @@ public class EnvironmentHelper {
         let incongitoTabsOpened = ClientLogCounterAttribute(
             key: LogConfig.Attribute.IncognitoTabsOpened,
             value: String(numOfIncognitoTabs))
+
+        // number of archived tabs
+        let numArchivedTabsTotal = ClientLogCounterAttribute(
+            key: LogConfig.Attribute.NumberOfArchivedTabsTotal, value: String(numOfArchivedTabs))
 
         // number of tab groups
         let numTabGroupsTotal = ClientLogCounterAttribute(
@@ -109,6 +116,7 @@ public class EnvironmentHelper {
 
         let attributes = [
             normalTabsOpened, incongitoTabsOpened, numTabGroupsTotal, numChildTabsTotal,
+            numArchivedTabsTotal,
             deviceTheme, deviceOrientation, deviceScreensSize,
             isUserSignedIn, getSessionUUID(),
         ]

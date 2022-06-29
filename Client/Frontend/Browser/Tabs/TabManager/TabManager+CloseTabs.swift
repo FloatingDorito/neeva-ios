@@ -8,22 +8,28 @@ import XCGLogger
 private let log = Logger.browser
 
 extension TabManager {
-    func removeTab(_ tab: Tab, showToast: Bool = false, updateSelectedTab: Bool = true) {
+    func removeTab(_ tab: Tab?, showToast: Bool = false, updateSelectedTab: Bool = true) {
+        guard let tab = tab else {
+            return
+        }
+
         // The index of the removed tab w.r.s to the normalTabs/incognitoTabs is
         // calculated in advance, and later used for finding rightOrLeftTab. In time-based
         // switcher, the normalTabs get filtered to make sure we only select tab in
         // today section.
-        guard
-            let index = tab.isIncognito
-                ? incognitoTabs.firstIndex(where: { $0 == tab })
-                : (FeatureFlag[.enableTimeBasedSwitcher]
-                    ? normalTabs.filter {
-                        $0.wasLastExecuted(.today)
-                    }.firstIndex(where: { $0 == tab })
-                    : normalTabs.firstIndex(where: { $0 == tab }))
-        else { return }
+        let normalTabsToday = normalTabs.filter {
+            $0.wasLastExecuted(.today)
+        }
+
+        let index =
+            tab.isIncognito
+            ? incognitoTabs.firstIndex(where: { $0 == tab })
+            : normalTabsToday.firstIndex(where: { $0 == tab })
+
         addTabsToRecentlyClosed([tab], showToast: showToast)
         removeTab(tab, flushToDisk: true, notify: true)
+
+        guard let index = index else { return }
 
         if let selectedTab = selectedTab, selectedTab.isIncognito == tab.isIncognito,
             updateSelectedTab
@@ -34,13 +40,15 @@ extension TabManager {
 
     func removeTabs(
         _ tabsToBeRemoved: [Tab], showToast: Bool = true,
-        updateSelectedTab: Bool = true
+        updateSelectedTab: Bool = true, dontAddToRecentlyClosed: Bool = false, notify: Bool = true
     ) {
         guard tabsToBeRemoved.count > 0 else {
             return
         }
 
-        addTabsToRecentlyClosed(tabsToBeRemoved, showToast: showToast)
+        if !dontAddToRecentlyClosed {
+            addTabsToRecentlyClosed(tabsToBeRemoved, showToast: showToast)
+        }
 
         let previous = selectedTab
 
@@ -57,8 +65,12 @@ extension TabManager {
             TabEvent.post(.didClose, for: tab)
         }
 
-        updateTabGroupsAndSendNotifications(notify: true)
-        sendSelectTabNotifications(previous: previous)
+        if notify {
+            updateAllTabDataAndSendNotifications(notify: true)
+            sendSelectTabNotifications(previous: previous)
+        } else {
+            updateAllTabDataAndSendNotifications(notify: false)
+        }
 
         storeChanges()
     }
@@ -81,7 +93,7 @@ extension TabManager {
 
         if notify {
             TabEvent.post(.didClose, for: tab)
-            updateTabGroupsAndSendNotifications(notify: notify)
+            updateAllTabDataAndSendNotifications(notify: notify)
         }
 
         if flushToDisk {
@@ -97,15 +109,13 @@ extension TabManager {
         let viableTabs: [Tab] =
             tab.isIncognito
             ? incognitoTabs
-            : (FeatureFlag[.enableTimeBasedSwitcher]
-                ? normalTabs.filter {
-                    $0.wasLastExecuted(.today)
-                } : normalTabs)
+            : normalTabs.filter {
+                $0.wasLastExecuted(.today)
+            }
         let bvc = SceneDelegate.getBVC(with: scene)
 
         if closedLastNormalTab || closedLastIncognitoTab
-            || (FeatureFlag[.enableTimeBasedSwitcher]
-                ? !viableTabs.contains(where: { $0.wasLastExecuted(.today) }) : false)
+            || !viableTabs.contains(where: { $0.wasLastExecuted(.today) })
         {
             DispatchQueue.main.async {
                 self.selectTab(nil, notify: notify)
@@ -183,5 +193,11 @@ extension TabManager {
                 tab.close()
             }
         }
+    }
+
+    // MARK: - Blank Tabs
+    /// Removes any tabs with the location `about:blank`. Seen when clicking web links that open native apps.
+    func removeBlankTabs() {
+        removeTabs(tabs.filter { $0.url == URL.aboutBlank }, showToast: false)
     }
 }

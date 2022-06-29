@@ -65,6 +65,7 @@ private func setCookiesForNeeva(webView: WKWebView, isIncognito: Bool) {
         .recipeCheatsheet,
         .recipeCardNavigate,
         .enableBacklink,
+        .enableBacklinkSnippet,
     ]
     let intFlags: [NeevaFeatureFlags.IntFlag] = []
     let floatFlags: [NeevaFeatureFlags.FloatFlag] = []
@@ -119,7 +120,6 @@ extension BrowserViewController: WKUIDelegate {
         // the request here manually leads to incorrect results!!
         let newTab = tabManager.addPopupForParentTab(
             bvc: bvc, parentTab: parentTab, configuration: configuration)
-
         newTab.setURL(.aboutBlank)
 
         return newTab.webView
@@ -698,12 +698,7 @@ extension BrowserViewController: WKNavigationDelegate {
                         decisionHandler(.cancel)
                         return
                     }
-                } else if url.path == "/signin"
-                    || (url.path == "/search"
-                        && query["q"] != nil
-                        && !NeevaUserInfo.shared.hasLoginCookie())
-                        && Defaults[.signedInOnce]
-                {
+                } else if url.path == "/signin" {
                     self.presentIntroViewController(true, signInMode: true)
                     decisionHandler(.allow)
                     return

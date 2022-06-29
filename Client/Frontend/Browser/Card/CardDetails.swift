@@ -275,20 +275,13 @@ public class TabCardDetails: CardDetails, AccessingManagerProvider,
     @ViewBuilder func contextMenu() -> some View {
         if !tab.isIncognito {
             Button { [self] in
-                guard let url = url else { return }
-                let newTab = manager.addTab(
-                    URLRequest(url: url), afterTab: tab, isIncognito: tab.isIncognito)
-                newTab.rootUUID = UUID().uuidString
-                manager.selectTab(newTab, previous: tab, notify: true)
+                manager.duplicateTab(tab, incognito: tab.isIncognito)
             } label: {
                 Label("Duplicate Tab", systemSymbol: .plusSquareOnSquare)
             }.disabled(url == nil)
 
             Button { [self] in
-                guard let url = url else { return }
-                let newTab = manager.addTab(URLRequest(url: url), afterTab: tab, isIncognito: true)
-                newTab.rootUUID = UUID().uuidString
-                manager.selectTab(newTab, previous: tab, notify: true)
+                manager.duplicateTab(tab, incognito: true)
             } label: {
                 Label("Open in Incognito", image: "incognito")
             }.disabled(url == nil)
@@ -384,17 +377,8 @@ class SpaceEntityThumbnail: CardDetails, AccessingManagerProvider {
         manager.ACL
     }
 
-    private var imageThumbnailModel: ImageThumbnailModel?
-
     var isImage: Bool {
-        guard let pathExtension = data.url?.pathExtension else {
-            return false
-        }
-
-        return pathExtension == "jpeg"
-            || pathExtension == "jpg"
-            || pathExtension == "png"
-            || pathExtension == "gif"
+        return data.url?.isImage ?? false
     }
 
     var richEntityPreviewURL: URL? {
@@ -431,9 +415,6 @@ class SpaceEntityThumbnail: CardDetails, AccessingManagerProvider {
         self.data = data
         self.id = data.id
         self.space = space
-        if let thumbnailData = data.thumbnail?.dataURIBody {
-            self.imageThumbnailModel = .init(imageData: thumbnailData)
-        }
     }
 
     func webImage(url: URL) -> some View {
@@ -464,8 +445,10 @@ class SpaceEntityThumbnail: CardDetails, AccessingManagerProvider {
             webImage(url: imageURL)
         } else if isImage, let imageURL = data.url {
             webImage(url: imageURL)
-        } else if let imageThumbnailModel = imageThumbnailModel {
-            ImageThumbnailView(model: imageThumbnailModel)
+        } else if let thumbnail = data.thumbnail,
+            let imageUrl = URL(string: thumbnail)
+        {
+            webImage(url: imageUrl)
         } else {
             GeometryReader { geom in
                 Symbol(decorative: .bookmarkOnBookmark, size: geom.size.width / 3)
@@ -489,10 +472,10 @@ class SpaceCardDetails: CardDetails, AccessingManagerProvider, ThumbnailModel {
     @Published var showingDetails = false
 
     var id: String
-    var item: Space?
-    var closeButtonImage: UIImage? = nil
+    var isPinnable: Bool = true
     @Published var allDetails: [SpaceEntityThumbnail] = []
     @Published var allDetailsWithExclusionList: [SpaceEntityThumbnail] = []
+    @Published var item: Space?
     @Published private(set) var refreshSpaceSubscription: AnyCancellable? = nil
 
     var isFollowing: Bool {
@@ -507,16 +490,35 @@ class SpaceCardDetails: CardDetails, AccessingManagerProvider, ThumbnailModel {
         item?.displayTitle ?? ""
     }
 
+    var closeButtonImage: UIImage? {
+        guard let item = item, item.isPinned else { return nil }
+        return UIImage(systemName: "pin.fill")
+    }
+
+    // This is used to manage some of the Combine subscriptions in
+    // this class. `subscriptionCount` is a simple ref counter,
+    // and when all of our subscriptions are complete, we clear out
+    // the `Set` and let the garbage collector do its thing.
+    var subscriptions: Set<AnyCancellable> = []
+    var subscriptionCount: Int = 0 {
+        didSet {
+            if subscriptionCount == 0 {
+                subscriptions.removeAll()
+            }
+        }
+    }
+
     init(id: String, manager: SpaceStore) {
         self.id = id
         self.manager = manager
         updateSpace()
     }
 
-    init(space: Space, manager: SpaceStore) {
+    init(space: Space, manager: SpaceStore, isPinnable: Bool = true) {
         self.item = space
         self.id = space.id.id
         self.manager = manager
+        self.isPinnable = isPinnable
         updateDetails()
     }
 
@@ -539,7 +541,7 @@ class SpaceCardDetails: CardDetails, AccessingManagerProvider, ThumbnailModel {
         }.shadow(radius: 0)
     }
 
-    func refresh() {
+    func refresh(completion: @escaping (Bool) -> Void = { _ in }) {
         guard !(self.item?.isDigest ?? false) else { return }
 
         if isFollowing {
@@ -547,7 +549,8 @@ class SpaceCardDetails: CardDetails, AccessingManagerProvider, ThumbnailModel {
         }
 
         refreshSpaceSubscription = manager.$state.sink { state in
-            if case .ready = state {
+            switch state {
+            case .ready:
                 if self.manager.updatedSpacesFromLastRefresh.first?.id.id ?? ""
                     == self.id || !self.isFollowing
                 {
@@ -557,9 +560,13 @@ class SpaceCardDetails: CardDetails, AccessingManagerProvider, ThumbnailModel {
                 withAnimation(.easeOut) {
                     self.refreshSpaceSubscription = nil
                 }
+                completion(true)
+            case .refreshing, .mutatingLocally:
+                return
+            case .failed:
+                completion(false)
             }
         }
-
     }
 
     func updateSpace() {
@@ -607,6 +614,54 @@ class SpaceCardDetails: CardDetails, AccessingManagerProvider, ThumbnailModel {
         }
 
         return true
+    }
+
+    func deleteSpace() {
+        let request = manager.sendDeleteSpaceRequest(spaceId: id)
+        subscriptionCount += 1
+        request?.$state.sink { [self] state in
+            switch state {
+            case .initial:
+                Logger.browser.info("Waiting for result from deleting space")
+            case .success:
+                manager.deleteSpace(with: id)
+                fallthrough
+            case .failure:
+                subscriptionCount -= 1
+            }
+        }.store(in: &subscriptions)
+    }
+
+    func unfollowSpace() {
+        let request = manager.sendUnfollowSpaceRequest(spaceId: id)
+        subscriptionCount += 1
+        request?.$state.sink { [self] state in
+            switch state {
+            case .initial:
+                Logger.browser.info("Waiting for result from unfollowing space")
+            case .success:
+                manager.deleteSpace(with: id)
+                fallthrough
+            case .failure:
+                subscriptionCount -= 1
+            }
+        }.store(in: &subscriptions)
+    }
+
+    func pinSpace() {
+        let request = manager.sendPinSpaceRequest(spaceId: id)
+        subscriptionCount += 1
+        request?.$state.sink { [self] state in
+            switch state {
+            case .initial:
+                Logger.browser.info("Waiting for result from toggling space pin")
+            case .success:
+                manager.togglePinSpace(with: id)
+                fallthrough
+            case .failure:
+                subscriptionCount -= 1
+            }
+        }.store(in: &subscriptions)
     }
 }
 
@@ -740,7 +795,7 @@ class TabGroupCardDetails: ObservableObject {
         }
 
         allDetails =
-            manager.getTabGroup(for: id)?.children
+            tabGroup.children
             .sorted(by: { lhs, rhs in
                 if lhs.isPinned && rhs.isPinned {
                     // Note: We should make it impossible for `pinnedTime` to be nil when
@@ -759,7 +814,7 @@ class TabGroupCardDetails: ObservableObject {
                     tab: $0,
                     manager: manager,
                     isChild: true)
-            }) ?? []
+            })
     }
 
     func onSelect() {

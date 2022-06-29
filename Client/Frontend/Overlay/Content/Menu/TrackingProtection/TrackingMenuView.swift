@@ -27,16 +27,15 @@ class TrackingStatsViewModel: ObservableObject {
     @Published private(set) var whosTrackingYouDomains = [WhosTrackingYouDomain]()
     @Published var preventTrackersForCurrentPage: Bool {
         didSet {
-            ClientLogger.shared.logCounter(
-                preventTrackersForCurrentPage ? .TurnOnBlockTracking : .TurnOffBlockTracking,
-                attributes: EnvironmentHelper.shared.getAttributes() + [
-                    ClientLogCounterAttribute(
-                        key: LogConfig.TrackingProtectionAttribute.toggleProtectionForURL,
-                        value: selectedTab?.currentURL()?.absoluteString)
-                ]
-            )
+            var url = selectedTabURL
+            // extract url query param for internal pages
+            if let internalUrl = InternalURL(url),
+                let extractedUrl = internalUrl.extractedUrlParam
+            {
+                url = extractedUrl
+            }
 
-            guard let domain = selectedTabURL?.host, Defaults[.cookieCutterEnabled] else {
+            guard let domain = url?.host, Defaults[.cookieCutterEnabled] else {
                 return
             }
 

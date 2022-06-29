@@ -36,7 +36,7 @@ class BaseTestCase: XCTestCase {
     }
 
     func setUpApp() {
-        if !launchArguments.contains("FIREFOX_PERFORMANCE_TEST") {
+        if !launchArguments.contains("NEEVA_PERFORMANCE_TEST") {
             app.launchArguments = [LaunchArguments.Test] + launchArguments
         } else {
             app.launchArguments = [LaunchArguments.PerformanceTest] + launchArguments
@@ -185,12 +185,12 @@ class BaseTestCase: XCTestCase {
         } else {
             waitForExistence(app.buttons["Show Tabs"], timeout: 3)
             app.buttons["Show Tabs"].press(forDuration: 1)
+            waitForExistence(app.buttons["Close Tab"])
         }
 
         let closeAllTabButton = app.buttons["Close All Tabs"]
         if closeAllTabButton.exists {
             closeAllTabButton.tap()
-
             waitForExistence(app.buttons["Confirm Close All Tabs"], timeout: 3)
             app.buttons["Confirm Close All Tabs"].tap()
         } else {
@@ -262,13 +262,20 @@ extension BaseTestCase {
 }
 
 extension XCUIElement {
+    /*
+     * Tap the element, regardless of whether it is "hittable" or not.
+     * We deliberately avoid checking `isHittable`, which is sometimes problematic.
+     * See this SO comment and related discussion:
+     *
+     * "In this case, checking self.isHittable as suggested was causing an infinite loop.
+     * Skipping that if clause and directly calling coordinate.tap() fixed the issue."
+     * https://stackoverflow.com/a/33534187
+     */
     func tap(force: Bool = true) {
-        // There appears to be a bug with tapping elements sometimes, despite them being on-screen and tappable, due to hittable being false.
-        // See: http://stackoverflow.com/a/33534187/1248491
-        if isHittable {
-            tap()
-        } else if force {
+        if force {
             coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        } else {
+            tap()
         }
     }
 }

@@ -4,6 +4,7 @@
 
 import Defaults
 import Foundation
+import Shared
 import SwiftUI
 
 struct DefaultBrowserInterstitialWelcomeView: View {
@@ -12,20 +13,72 @@ struct DefaultBrowserInterstitialWelcomeView: View {
     @State private var switchToDefaultBrowserScreen = false
 
     @ViewBuilder
-    var header: some View {
-        Text("Welcome to Neeva")
-            .font(.system(size: 32, weight: .light))
-            .padding(.bottom, 5)
-        Text("The first ad-free, private search engine")
-            .withFont(.bodyLarge)
-    }
-
-    @ViewBuilder
-    var detail: some View {
-        Image("default-browser-prompt", bundle: .main)
-            .resizable()
-            .frame(width: 300, height: 205)
-            .padding(.bottom, 32)
+    var content: some View {
+        if interstitialModel.isInExperimentArm {
+            ZStack(alignment: .top) {
+                VStack {
+                    Image("welcome-gradient", bundle: .main).resizable()
+                        .frame(height: 400)
+                        .padding(.horizontal, -32)
+                        .ignoresSafeArea()
+                }
+                VStack {
+                    Spacer()
+                    Image("welcome-logo", bundle: .main)
+                        .frame(width: 100, height: 20)
+                    Spacer()
+                    ZStack {
+                        Color.white.clipShape(RoundedRectangle(cornerRadius: 20))
+                        VStack(alignment: .leading) {
+                            Image("welcome-shield", bundle: .main).frame(width: 32, height: 32)
+                            Text("Privacy Made Easy")
+                                .font(.system(size: 40, weight: .bold))
+                                .foregroundColor(Color.ui.adaptive.blue)
+                            ForEach(interstitialModel.welcomePageBullets(), id: \.self) {
+                                bulletText in
+                                HStack {
+                                    Symbol(decorative: .checkmarkCircleFill, size: 16)
+                                        .foregroundColor(Color.ui.adaptive.blue)
+                                    Text(bulletText).withFont(unkerned: .bodyLarge).foregroundColor(
+                                        Color(white: 0.3))
+                                }
+                                .padding(.vertical, 5)
+                            }
+                        }.padding(48).frame(width: 315).overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.ui.gray96, lineWidth: 2)
+                        )
+                    }
+                    .fixedSize()
+                    .padding(.top, 10)
+                    Spacer()
+                }
+            }
+            Spacer()
+        } else {
+            VStack(alignment: .leading) {
+                VStack(alignment: .leading) {
+                    Image("neeva_interstitial_welcome_page_privacy", bundle: .main)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: 475)
+                        .border(Color.tertiaryLabel, width: 1).padding(.horizontal, -32)
+                        .padding(.top, 30)
+                }
+            }
+            Spacer()
+            VStack(alignment: .leading) {
+                Text("Privacy Made Easy")
+                    .font(.system(size: 32, weight: .bold))
+                    .padding(.bottom, 5)
+                Text(
+                    "You’re just a step away from ad-free search, and browsing without ads, trackers or pop-ups"
+                )
+                .foregroundColor(Color.ui.gray30)
+                .withFont(.bodyXLarge)
+            }
+            Spacer()
+        }
     }
 
     var body: some View {
@@ -33,9 +86,9 @@ struct DefaultBrowserInterstitialWelcomeView: View {
             DefaultBrowserInterstitialOnboardingView()
         } else {
             DefaultBrowserInterstitialView(
-                detail: detail,
-                header: header,
-                primaryButton: "Get Started",
+                content: content,
+                primaryButton: interstitialModel.isInExperimentArm
+                    ? "Let's Go" : "Get Started",
                 primaryAction: {
                     switchToDefaultBrowserScreen = true
                     ClientLogger.shared.logCounter(.GetStartedInWelcome)
@@ -51,5 +104,11 @@ struct DefaultBrowserInterstitialWelcomeView: View {
                 }
             }
         }
+    }
+}
+
+struct DefaultBrowserInterstitialWelcomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        DefaultBrowserInterstitialWelcomeView()
     }
 }
