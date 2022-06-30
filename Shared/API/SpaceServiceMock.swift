@@ -380,8 +380,21 @@ public class SpaceServiceMock: SpaceService {
         return request
     }
 
+    // TODO(jon): Test this once profile name updates work reliably. Issue #3961
     public func updateProfile(firstName: String, lastName: String) -> UpdateProfileRequest? {
-        return nil
+        let request = UpdateProfileRequest(firstName: firstName, lastName: lastName, testMode: true)
+
+        SpaceMock.handleMutationRequest(request: request) {
+            /*if lastName.isEmpty {
+                // Cannot assign to property: 'displayName' setter is inaccessible
+                NeevaUserInfo.shared.displayName = firstName
+            } else {
+                NeevaUserInfo.shared.displayName = "\(firstName) \(lastName)"
+            }*/
+            return true
+        }
+
+        return request
     }
 
     // TODO(jon): update description and thumbnail
