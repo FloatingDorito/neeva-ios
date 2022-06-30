@@ -342,7 +342,19 @@ public class SpaceServiceMock: SpaceService {
     }
 
     public func reorderSpace(spaceID: String, ids: [String]) -> ReorderSpaceRequest? {
-        return nil
+        let request = ReorderSpaceRequest(spaceID: spaceID, ids: ids, testMode: true)
+
+        SpaceMock.handleMutationRequest(request: request) { [self] in
+            if let space = spaces[spaceID] {
+                space.entities.sort {
+                    // Abort if the ID is not found.
+                    ids.firstIndex(of: $0.id)! < ids.firstIndex(of: $1.id)!
+                }
+            }
+            return spaces[spaceID] != nil
+        }
+
+        return request
     }
 
     public func pinSpace(spaceId: String, isPinned: Bool) -> PinSpaceRequest? {
