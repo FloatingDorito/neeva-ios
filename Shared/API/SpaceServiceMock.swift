@@ -414,9 +414,33 @@ public class SpaceServiceMock: SpaceService {
         return request
     }
 
+    // This mirrors AddOrUpdateSpaceView's Save button logic.
     public func updateSpaceEntity(
         spaceID: String, entityID: String, title: String, snippet: String?, thumbnail: String?
     ) -> UpdateSpaceEntityRequest? {
-        return nil
+        let request = UpdateSpaceEntityRequest(
+            spaceID: spaceID, entityID: entityID, title: title, snippet: snippet,
+            thumbnail: thumbnail, testMode: true)
+
+        SpaceMock.handleMutationRequest(request: request) { [self] in
+            if let oldData = spaces[spaceID]?.entities.first(where: { $0.id == entityID }),
+                let index = spaces[spaceID]?.entities.firstIndex(where: { $0.id == entityID })
+            {
+                let newData = SpaceEntityData(
+                    id: oldData.id,
+                    url: oldData.url,
+                    title: title,
+                    snippet: snippet,
+                    thumbnail: thumbnail,
+                    previewEntity: oldData.previewEntity
+                )
+                spaces[spaceID]?.entities.replaceSubrange(
+                    index..<(index + 1), with: [newData])
+            }
+
+            return spaces[spaceID]?.entities.first(where: { $0.id == entityID }) != nil
+        }
+
+        return request
     }
 }
