@@ -164,6 +164,8 @@ public class SpaceServiceMock: SpaceService {
         let spacePublicAclTestsSpace2 = SpaceMock(
             name: "SpacePublicAclTests Space2", isPublic: true)
         let spaceGeneratorTestsSpace = SpaceMock(name: "SpaceGeneratorTests Space")
+        let relatedSpaceTestsSpace1 = SpaceMock(name: "RelatedSpaceTests Space1")
+        let relatedSpaceTestsSpace2 = SpaceMock(name: "RelatedSpaceTests Space2")
 
         spaces[mySpace.id] = mySpace
         spaces[spaceNotOwnedByMe.id] = spaceNotOwnedByMe
@@ -171,6 +173,8 @@ public class SpaceServiceMock: SpaceService {
         spaces[spacePublicAclTestsSpace1.id] = spacePublicAclTestsSpace1
         spaces[spacePublicAclTestsSpace2.id] = spacePublicAclTestsSpace2
         spaces[spaceGeneratorTestsSpace.id] = spaceGeneratorTestsSpace
+        spaces[relatedSpaceTestsSpace1.id] = relatedSpaceTestsSpace1
+        spaces[relatedSpaceTestsSpace2.id] = relatedSpaceTestsSpace2
 
         // Populate the Spaces
         spaces[spaceNotOwnedByMe.id]?.addSpaceEntity(
@@ -217,6 +221,12 @@ public class SpaceServiceMock: SpaceService {
                 """
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ultricies integer quis auctor elit sed vulputate mi sit amet. Sit amet luctus venenatis lectus magna fringilla urna porttitor.
                 """, url: "https://example.com", generatorId: generatorId)
+
+        // RelatedSpaceTests
+        spaces[relatedSpaceTestsSpace1.id]?.addSpaceEntity(
+            title: "Main Space Entity", url: "https://example.com")
+        spaces[relatedSpaceTestsSpace2.id]?.addSpaceEntity(
+            title: "Related Space Entity", url: "https://example.com")
     }
 
     public func addPublicACL(spaceID: String) -> AddPublicACLRequest? {
@@ -388,18 +398,47 @@ public class SpaceServiceMock: SpaceService {
         }
     }
 
+    // Used only for RelatedSpaceTests.swift
     public func getRelatedSpacesCountData(
         spaceID: String,
         completion: @escaping (Result<Int, Error>) -> Void
     ) -> Combine.Cancellable? {
-        return nil
+        // Simulate a network request
+        DispatchQueue.main.async { [self] in
+            completion(
+                Result<Int, Error>(catching: {
+                    return spaces[spaceID]!.name.contains("RelatedSpaceTests Space") ? 1 : 0
+                })
+            )
+        }
+
+        return AnyCancellable {
+            // do nothing
+        }
     }
 
+    // Used only for RelatedSpaceTests.swift
     public func getRelatedSpacesData(
         spaceID: String,
         completion: @escaping (Result<[SpacesDataQueryController.Space], Error>) -> Void
     ) -> Combine.Cancellable? {
-        return nil
+        // Simulate a network request
+        DispatchQueue.main.async { [self] in
+            completion(
+                Result<[SpacesDataQueryController.Space], Error>(catching: {
+                    return [
+                        spaces.first { $0.value.name == "RelatedSpaceTests Space1" }!.value
+                            .spaceDataApollo,
+                        spaces.first { $0.value.name == "RelatedSpaceTests Space2" }!.value
+                            .spaceDataApollo,
+                    ]
+                })
+            )
+        }
+
+        return AnyCancellable {
+            // do nothing
+        }
     }
 
     public func getSpaces(

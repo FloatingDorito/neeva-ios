@@ -991,6 +991,7 @@
 		9B99C5342825C63F006D390D /* SpaceServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B99C5332825C63F006D390D /* SpaceServiceMock.swift */; };
 		9BB796DD282EAD21001E577C /* AddToSpaceSheetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BB796DC282EAD21001E577C /* AddToSpaceSheetTests.swift */; };
 		9BC9C15B286F5880004DA7ED /* SpaceGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC9C15A286F5880004DA7ED /* SpaceGeneratorTests.swift */; };
+		9BC9C15D286F7354004DA7ED /* RelatedSpaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC9C15C286F7354004DA7ED /* RelatedSpaceTests.swift */; };
 		9BE2C4F2284FFA64004F8BAA /* SpaceGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE2C4F1284FFA64004F8BAA /* SpaceGridTests.swift */; };
 		9BF99E2A286265CD00BFD134 /* SpaceConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF99E29286265CD00BFD134 /* SpaceConstants.swift */; };
 		9BFAA4A32857D2B9008DEEB6 /* SpaceDetailPageTopBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BFAA4A22857D2B9008DEEB6 /* SpaceDetailPageTopBarTests.swift */; };
@@ -2436,6 +2437,7 @@
 		9B99C5332825C63F006D390D /* SpaceServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceServiceMock.swift; sourceTree = "<group>"; };
 		9BB796DC282EAD21001E577C /* AddToSpaceSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToSpaceSheetTests.swift; sourceTree = "<group>"; };
 		9BC9C15A286F5880004DA7ED /* SpaceGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceGeneratorTests.swift; sourceTree = "<group>"; };
+		9BC9C15C286F7354004DA7ED /* RelatedSpaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelatedSpaceTests.swift; sourceTree = "<group>"; };
 		9BE2C4F1284FFA64004F8BAA /* SpaceGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceGridTests.swift; sourceTree = "<group>"; };
 		9BF99E29286265CD00BFD134 /* SpaceConstants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpaceConstants.swift; sourceTree = "<group>"; };
 		9BFAA4A22857D2B9008DEEB6 /* SpaceDetailPageTopBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceDetailPageTopBarTests.swift; sourceTree = "<group>"; };
@@ -3671,6 +3673,7 @@
 				9B6FD8B5285D10EF005C6999 /* SpaceEntityTests.swift */,
 				9B489596286528A70017FA57 /* SpacePublicAclTests.swift */,
 				9BC9C15A286F5880004DA7ED /* SpaceGeneratorTests.swift */,
+				9BC9C15C286F7354004DA7ED /* RelatedSpaceTests.swift */,
 			);
 			path = XCUITests;
 			sourceTree = "<group>";
@@ -6901,6 +6904,7 @@
 				C832BF7B26E0B31B00B9A1F8 /* LazyTabTests.swift in Sources */,
 				0BF0DB4A1E57B05E009172B0 /* LaunchArguments.swift in Sources */,
 				C832BF6A26E0B31500B9A1F8 /* DomainAutocompleteTest.swift in Sources */,
+				9BC9C15D286F7354004DA7ED /* RelatedSpaceTests.swift in Sources */,
 				C832BF7226E0B31500B9A1F8 /* DesktopModeTests.swift in Sources */,
 				C832BF7826E0B31B00B9A1F8 /* ToolbarTest.swift in Sources */,
 				C832BF6926E0B31500B9A1F8 /* AuthenticationTests.swift in Sources */,
