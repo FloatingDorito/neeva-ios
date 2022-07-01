@@ -22,6 +22,7 @@ public class SpaceServiceMock: SpaceService {
 
         // SpaceDataApollo properties
         var entities: [SpaceEntityData] = []
+        var generators: [SpaceGeneratorData] = []
 
         var spaceApollo: SpaceApollo {
             SpaceApollo(
@@ -58,7 +59,7 @@ public class SpaceServiceMock: SpaceService {
                 ),
                 entities: entities,
                 comments: [],
-                generators: []
+                generators: generators
             )
         }
 
@@ -66,6 +67,37 @@ public class SpaceServiceMock: SpaceService {
             self.name = name
             self.isOwner = isOwner
             self.isPublic = isPublic
+        }
+
+        @discardableResult
+        func addGeneratedSpaceEntity(
+            title: String = "", description: String = "", url: String = "", generatorId: String = ""
+        ) -> String {
+            let id = UUID().uuidString
+            resultCount += 1
+            entities.append(
+                SpaceEntityData(
+                    id: id,
+                    url: URL(string: url),
+                    title: title,
+                    snippet: description,
+                    thumbnail: "",
+                    previewEntity: .newsItem(
+                        PreviewEntity.NewsItem(
+                            title: title,
+                            snippet: description,
+                            url: URL(string: url)!,
+                            thumbnailURL: nil,
+                            providerName: "NBC Sports",
+                            datePublished: ISO8601DateFormatter().string(from: Date()),
+                            faviconURL: nil,
+                            domain: nil
+                        )
+                    ),
+                    generatorID: generatorId
+                )
+            )
+            return id
         }
 
         @discardableResult
@@ -85,6 +117,13 @@ public class SpaceServiceMock: SpaceService {
                 )
             )
             return id
+        }
+
+        @discardableResult
+        func addSpaceGenerator(id: String, params: [String: String]) -> Bool {
+            generators.append(SpaceGeneratorData(id: id, params: params))
+            // This operation is always successful.
+            return true
         }
 
         @discardableResult
@@ -124,12 +163,14 @@ public class SpaceServiceMock: SpaceService {
         let spacePublicAclTestsSpace1 = SpaceMock(name: "SpacePublicAclTests Space1")
         let spacePublicAclTestsSpace2 = SpaceMock(
             name: "SpacePublicAclTests Space2", isPublic: true)
+        let spaceGeneratorTestsSpace = SpaceMock(name: "SpaceGeneratorTests Space")
 
         spaces[mySpace.id] = mySpace
         spaces[spaceNotOwnedByMe.id] = spaceNotOwnedByMe
         spaces[spaceEntityTestsSpace.id] = spaceEntityTestsSpace
         spaces[spacePublicAclTestsSpace1.id] = spacePublicAclTestsSpace1
         spaces[spacePublicAclTestsSpace2.id] = spacePublicAclTestsSpace2
+        spaces[spaceGeneratorTestsSpace.id] = spaceGeneratorTestsSpace
 
         // Populate the Spaces
         spaces[spaceNotOwnedByMe.id]?.addSpaceEntity(
@@ -153,6 +194,29 @@ public class SpaceServiceMock: SpaceService {
             title: "Neeva", url: "https://neeva.com")
         spaces[spacePublicAclTestsSpace2.id]?.addSpaceEntity(
             title: "Neeva", url: "https://neeva.com")
+
+        // SpaceGeneratorTests
+        let generatorId = "g:5mfpHdgkXYQaFZz6zjXYTHHTyIL0gWPP4RWsidv4"
+        spaces[spaceGeneratorTestsSpace.id]?.addSpaceGenerator(
+            id: generatorId,
+            params: [
+                "query": "golden state",
+                "count": "2",
+                "location": "",
+            ]
+        )
+        spaces[spaceGeneratorTestsSpace.id]?.addGeneratedSpaceEntity(
+            title: "First generated entity",
+            description:
+                """
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ultricies integer quis auctor elit sed vulputate mi sit amet. Sit amet luctus venenatis lectus magna fringilla urna porttitor.
+                """, url: "https://example.com", generatorId: generatorId)
+        spaces[spaceGeneratorTestsSpace.id]?.addGeneratedSpaceEntity(
+            title: "Second generated entity",
+            description:
+                """
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ultricies integer quis auctor elit sed vulputate mi sit amet. Sit amet luctus venenatis lectus magna fringilla urna porttitor.
+                """, url: "https://example.com", generatorId: generatorId)
     }
 
     public func addPublicACL(spaceID: String) -> AddPublicACLRequest? {
@@ -218,7 +282,17 @@ public class SpaceServiceMock: SpaceService {
     }
 
     public func claimGeneratedItem(spaceID: String, entityID: String) -> ClaimGeneratedItem? {
-        return nil
+        let request = ClaimGeneratedItem(spaceID: spaceID, entityID: entityID, testMode: true)
+
+        SpaceMock.handleMutationRequest(request: request) { [self] in
+            if var entity = spaces[spaceID]?.entities.first(where: { $0.id == entityID }) {
+                entity.generatorID = nil
+                return true
+            }
+            return false
+        }
+
+        return request
     }
 
     public func createSpace(name: String) -> CreateSpaceRequest? {
@@ -236,7 +310,26 @@ public class SpaceServiceMock: SpaceService {
     }
 
     public func deleteGenerator(spaceID: String, generatorID: String) -> DeleteGeneratorRequest? {
-        return nil
+        let request = DeleteGeneratorRequest(
+            spaceID: spaceID, generatorID: generatorID, testMode: true)
+
+        SpaceMock.handleMutationRequest(request: request) { [self] in
+            if let space = spaces[spaceID],
+                let index = space.generators.firstIndex(where: { $0.id == generatorID })
+            {
+                space.generators.remove(at: index)
+                // "Keep" all the entities added by the generator.
+                for (index, entity) in space.entities.enumerated() {
+                    if entity.generatorID == generatorID {
+                        space.entities[index].generatorID = nil
+                    }
+                }
+                return true
+            }
+            return false
+        }
+
+        return request
     }
 
     public func deletePublicACL(spaceID: String) -> DeletePublicACLRequest? {
