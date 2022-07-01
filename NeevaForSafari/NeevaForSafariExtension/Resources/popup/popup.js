@@ -1,14 +1,17 @@
 //
 // Elements
 const neevaRedirectToggle = document.getElementById("neevaRedirectToggle");
+const navigateToNeevaButton = document.getElementById("navigateToNeevaButton");
 
 // Cookie Cutter
 const cookieCutterToggle = document.getElementById("cookieCutterToggle");
 const cookieCutterSettingsSection = document.getElementById("cookieCutterSettings");
-const acceptCookiesPicker = document.getElementById("acceptCookiesPicker");
-const declineCookiesPicker = document.getElementById("declineCookiesPicker");
 
-const navigateToNeevaButton = document.getElementById("navigateToNeevaButton");
+const acceptCookiesPicker = document.getElementById("acceptCookiesPicker");
+const acceptCookiesSection = document.getElementById("acceptCookiesSection");
+
+const declineCookiesPicker = document.getElementById("declineCookiesPicker");
+const declineCookiesSection = document.getElementById("declineCookiesSection");
 
 //
 // Preference Keys
@@ -20,9 +23,19 @@ function savePreference(preferenceName, value) {
     browser.runtime.sendMessage({ "savePreference": preferenceName, "value": value });
 };
 
+function getPreference(preferenceName) {
+    return browser.runtime.sendMessage({ "getPreference": preferenceName }).then((response) => {
+        return response["value"];
+    });
+}
+
 function setPreference(preferenceName, toggle) {
-    browser.runtime.sendMessage({ "getPreference": preferenceName }).then((response) => {
-        toggle.checked = response["value"];
+    getPreference(preferenceName).then((value) => {
+        toggle.checked = value;
+
+        if (toggle == cookieCutterToggle) {
+            updateCookieCutterSettingsDisplayState();
+        }
     });
 };
 
@@ -34,23 +47,47 @@ neevaRedirectToggle.onclick = function() {
 
 cookieCutterToggle.onclick = function() {
     updateCookieCutterSettingsDisplayState();
+
+    if (!cookieCutterToggle.checked) {
+        savePreference(acceptCookiesKey, false);
+    }
+   
     savePreference(cookieCutterKey, cookieCutterToggle.checked);
 };
 
 //
 // Cookie Cutter settings
 acceptCookiesPicker.onclick = function() {
-    declineCookiesPicker.checked = !acceptCookiesPicker.checked;
-    savePreference(acceptCookiesKey, acceptCookiesPicker.checked);
+    updateCookiePreferencesState(true);
+};
+
+acceptCookiesSection.onclick = function() {
+    updateCookiePreferencesState(true);
 };
 
 declineCookiesPicker.onclick = function() {
-    acceptCookiesPicker.checked = !declineCookiesPicker.checked;
-    savePreference(acceptCookiesKey, declineCookiesPicker.checked); 
+    updateCookiePreferencesState(false);
 };
+
+declineCookiesSection.onclick = function() {
+    updateCookiePreferencesState(false);
+};
+
+function updateCookiePreferencesState(acceptCookies, savePreferenceToDevice = true) {
+    acceptCookiesPicker.checked = acceptCookies;
+    declineCookiesPicker.checked = !acceptCookies;
+
+    if (savePreferenceToDevice) {
+        savePreference(acceptCookiesKey, acceptCookies);
+    }
+}
 
 function updateCookieCutterSettingsDisplayState() {
     cookieCutterSettingsSection.style.display = cookieCutterToggle.checked ? "block" : "none";
+
+    getPreference(acceptCookiesKey).then((value) => {
+        updateCookiePreferencesState(value, false);
+    });
 };
 
 //
@@ -69,4 +106,3 @@ navigateToNeevaButton.onclick = function() {
 // On Run
 setPreference(neevaRedirectKey, neevaRedirectToggle);
 setPreference(cookieCutterKey, cookieCutterToggle);
-updateCookieCutterSettingsDisplayState();

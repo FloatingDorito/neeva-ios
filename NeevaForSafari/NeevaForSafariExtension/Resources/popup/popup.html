@@ -39,11 +39,11 @@
     <section id="cookieCutterSettings" style="display: none;">
         <div class="sectionHeader">COOKIE POPUPS</p>
         <div class="sectionContent">
-            <div class="picker">
+            <div class="picker" id="declineCookiesSection">
                 <p class="pickerTitle">Decline Non-essential Cookies</p>
 
                 <label class="pickerCheckmark">
-                    <input type="checkbox" id="declineCookiesPicker" checked/>
+                    <input type="checkbox" id="declineCookiesPicker"/>
                         <span class="checkmark"/>
                 </label>
             </label>
@@ -52,7 +52,7 @@
         <div class="divider"></div>
 
         <div class="sectionContent">
-            <div class="picker">
+            <div class="picker" id="acceptCookiesSection">
                 <p class="pickerTitle">Accept Non-essential Cookies</p>
 
                 <label class="pickerCheckmark">
@@ -60,6 +60,13 @@
                         <span class="checkmark"/>
                 </label>
             </label>
+        </div>
+
+        <div class="sectionFooter">
+            Essential cookies are used by sites to remember things like your login information and preferences.
+            These cookies cannot be blocked by the extension.
+            <br>
+            <a href="https://help.neeva.com/hc/en-us/articles/4486326606355" target="_blank">Learn More</a>
         </div>
     </section>  
 

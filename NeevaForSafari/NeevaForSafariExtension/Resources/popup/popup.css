@@ -28,7 +28,7 @@ section {
     border-radius: 12px;
 }
 
-.sectionHeader {
+.sectionHeader, .sectionFooter {
     width: 100%;
     padding-top: 20px;
     
@@ -37,6 +37,10 @@ section {
     text-align: left;
 
     float: left;
+}
+
+.sectionFooter {
+    padding-bottom: 20px;
 }
 
 /* Buttons */
@@ -52,6 +56,12 @@ button {
     
     font-size: 16px;
     font-weight: 600;
+}
+
+/* Links */
+a {
+    color: #0070F3;
+    text-decoration: none;
 }
 
 /* Dark Mode styles go here. */
