@@ -407,7 +407,7 @@ public class SpaceServiceMock: SpaceService {
         DispatchQueue.main.async { [self] in
             completion(
                 Result<Int, Error>(catching: {
-                    return spaces[spaceID]!.name.contains("RelatedSpaceTests Space") ? 1 : 0
+                    return spaces[spaceID]!.name.contains("RelatedSpaceTests Space") ? 2 : 0
                 })
             )
         }
