@@ -1,13 +1,20 @@
 //
 // Elements
 const neevaRedirectToggle = document.getElementById("neevaRedirectToggle");
+
+// Cookie Cutter
 const cookieCutterToggle = document.getElementById("cookieCutterToggle");
+const cookieCutterSettingsSection = document.getElementById("cookieCutterSettings");
+const acceptCookiesPicker = document.getElementById("acceptCookiesPicker");
+const declineCookiesPicker = document.getElementById("declineCookiesPicker");
+
 const navigateToNeevaButton = document.getElementById("navigateToNeevaButton");
 
 //
 // Preference Keys
 const neevaRedirectKey = "neevaRedirect";
 const cookieCutterKey = "cookieCutter";
+const acceptCookiesKey = "acceptCookies";
 
 function savePreference(preferenceName, value) {
     browser.runtime.sendMessage({ "savePreference": preferenceName, "value": value });
@@ -26,7 +33,24 @@ neevaRedirectToggle.onclick = function() {
 };
 
 cookieCutterToggle.onclick = function() {
+    updateCookieCutterSettingsDisplayState();
     savePreference(cookieCutterKey, cookieCutterToggle.checked);
+};
+
+//
+// Cookie Cutter settings
+acceptCookiesPicker.onclick = function() {
+    declineCookiesPicker.checked = !acceptCookiesPicker.checked;
+    savePreference(acceptCookiesKey, acceptCookiesPicker.checked);
+};
+
+declineCookiesPicker.onclick = function() {
+    acceptCookiesPicker.checked = !declineCookiesPicker.checked;
+    savePreference(acceptCookiesKey, declineCookiesPicker.checked); 
+};
+
+function updateCookieCutterSettingsDisplayState() {
+    cookieCutterSettingsSection.style.display = cookieCutterToggle.checked ? "block" : "none";
 };
 
 //
@@ -45,3 +69,4 @@ navigateToNeevaButton.onclick = function() {
 // On Run
 setPreference(neevaRedirectKey, neevaRedirectToggle);
 setPreference(cookieCutterKey, cookieCutterToggle);
+updateCookieCutterSettingsDisplayState();

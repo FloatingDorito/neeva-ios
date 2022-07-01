@@ -2,28 +2,66 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="popup.css">
-    <script type="module" src="popup.js"></script>
     <script type="module" src="content.js"></script>
+    <script type="module" src="popup.js"></script>
+
+    <link rel="stylesheet" href="picker.css">
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="switch.css">
 </head>
 <body>
-    <div class="toggle">
-        <p class="toggleTitle">Make Neeva default search</p>
+    <section>
+        <div class="sectionContent">
+            <div class="toggle">
+                <p class="toggleTitle">Make Neeva default search</p>
 
-        <label class="switch">
-            <input type="checkbox" id="neevaRedirectToggle"/>
-                <span class="slider round"/>
-        </label>
-    </div>
+                <label class="switch">
+                    <input type="checkbox" id="neevaRedirectToggle"/>
+                        <span class="slider round"/>
+                </label>
+            </div>
+        </div>
+    </section>
     
-    <div class="toggle">
-        <p class="toggleTitle">Cookie Cutter</p>
+    <section>
+        <div class="sectionContent">
+            <div class="toggle">
+                <p class="toggleTitle">Cookie Cutter</p>
 
-        <label class="switch">
-            <input type="checkbox" id="cookieCutterToggle"/>
-                <span class="slider round"/>
-        </label>
-    </div>
+                <label class="switch">
+                    <input type="checkbox" id="cookieCutterToggle"/>
+                        <span class="slider round"/>
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <section id="cookieCutterSettings" style="display: none;">
+        <div class="sectionHeader">COOKIE POPUPS</p>
+        <div class="sectionContent">
+            <div class="picker">
+                <p class="pickerTitle">Decline Non-essential Cookies</p>
+
+                <label class="pickerCheckmark">
+                    <input type="checkbox" id="declineCookiesPicker" checked/>
+                        <span class="checkmark"/>
+                </label>
+            </label>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sectionContent">
+            <div class="picker">
+                <p class="pickerTitle">Accept Non-essential Cookies</p>
+
+                <label class="pickerCheckmark">
+                    <input type="checkbox" id="acceptCookiesPicker"/>
+                        <span class="checkmark"/>
+                </label>
+            </label>
+        </div>
+    </section>  
 
     <button id="navigateToNeevaButton">Go to Neeva home</button>
 </body>

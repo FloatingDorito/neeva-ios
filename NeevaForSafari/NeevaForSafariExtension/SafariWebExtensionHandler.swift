@@ -9,6 +9,7 @@ private struct CookieCutterKeys {
     // Global key.
     static let CookieCutter = "cookieCutter"
     static let FlaggedSites = "cookieCutter.flaggedSites"
+    static let AcceptCookies = "acceptCookies"
     
     static let Analytic = "analytic"
     static let Marketing = "marketing"
@@ -42,6 +43,12 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         if let savePreference = data[ExtensionRequests.SavePreference.rawValue] as? String, let value = data["value"] as? Bool {
             os_log(.default, "Saving user preference: %{private}@ -- (NEEVA FOR SAFARI)", savePreference)
             defaults.set(value, forKey: savePreference)
+            
+            if savePreference == CookieCutterKeys.AcceptCookies {
+                defaults.set(value, forKey: CookieCutterKeys.Analytic)
+                defaults.set(value, forKey: CookieCutterKeys.Marketing)
+                defaults.set(value, forKey: CookieCutterKeys.Social)
+            }
         } else if let getPreference = data[ExtensionRequests.GetPreference.rawValue] as? String {
             os_log(.default, "Retrieving user preference: %{private}@ -- (NEEVA FOR SAFARI)", getPreference)
 
@@ -76,9 +83,9 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             let response = NSExtensionItem()
             response.userInfo = [ SFExtensionMessageKey: [
                 "cookieCutterEnabled": defaults.bool(forKey: CookieCutterKeys.CookieCutter),
-                CookieCutterKeys.Analytic: defaults.bool(forKey: CookieCutterKeys.Analytic),
-                CookieCutterKeys.Marketing: defaults.bool(forKey: CookieCutterKeys.Marketing),
-                CookieCutterKeys.Social: defaults.bool(forKey: CookieCutterKeys.Social),
+                CookieCutterKeys.Analytic: !defaults.bool(forKey: CookieCutterKeys.Analytic),
+                CookieCutterKeys.Marketing: !defaults.bool(forKey: CookieCutterKeys.Marketing),
+                CookieCutterKeys.Social: !defaults.bool(forKey: CookieCutterKeys.Social),
                 "isFlagged": isSiteFlagged(domain: domain)
             ]]
             
