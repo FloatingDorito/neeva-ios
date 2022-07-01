@@ -45,6 +45,8 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             defaults.set(value, forKey: savePreference)
             
             if savePreference == CookieCutterKeys.AcceptCookies {
+                resetFlaggedSiteList()
+                
                 defaults.set(value, forKey: CookieCutterKeys.Analytic)
                 defaults.set(value, forKey: CookieCutterKeys.Marketing)
                 defaults.set(value, forKey: CookieCutterKeys.Social)
@@ -111,5 +113,9 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     private func isSiteFlagged(domain: String) -> Bool {
         let currentFlagList = defaults.array(forKey: CookieCutterKeys.FlaggedSites) as? [String] ?? []
         return currentFlagList.contains(domain)
+    }
+    
+    private func resetFlaggedSiteList() {
+        defaults.set([], forKey: CookieCutterKeys.FlaggedSites)
     }
 }
