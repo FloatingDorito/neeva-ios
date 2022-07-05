@@ -786,7 +786,7 @@ class TabGroupCardDetails: CardDropDelegate, ObservableObject {
     func setIsSelected(selectedTabRootId: String?) {
         self.isSelected = selectedTabRootId == self.id
     }
-    
+
     public override func dropEntered(info: DropInfo) {
         guard let draggingDetail = CardDropDelegate.draggingDetail else {
             return
