@@ -12,8 +12,7 @@ struct CardDragAndDropModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onDrag({
-                TabCardDetails.dragState = TabCardDetails.DragState(
-                    tabCardModel: tabModel, draggingDetail: tabCardDetail)
+                CardDropDelegate.draggingDetail = tabCardDetail
                 return NSItemProvider(object: tabCardDetail.id as NSString)
             })
     }
