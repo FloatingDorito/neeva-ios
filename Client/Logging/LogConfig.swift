@@ -416,7 +416,7 @@ public enum LogConfig {
 
     private static var flagsObserver: AnyCancellable?
 
-    static let alwaysAllowedCategories: Set<InteractionCategory> = [
+    static let alwaysEnabledCategories: Set<InteractionCategory> = [
         .FirstRun,
         .Notification,
         .Suggestions,
@@ -429,7 +429,7 @@ public enum LogConfig {
         .OverflowMenu,
     ]
     public static func featureFlagEnabled(for category: InteractionCategory) -> Bool {
-        if alwaysAllowedCategories.contains(category) {
+        if alwaysEnabledCategories.contains(category) {
             return true
         }
 
