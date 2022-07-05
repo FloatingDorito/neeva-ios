@@ -447,15 +447,15 @@ public enum LogConfig {
     }
 
     private static func updateLoggingCategory() {
-        enabledLoggingCategories?.removeAll()
-        NeevaFeatureFlags.latestValue(.loggingCategories)
-            .components(separatedBy: ",").forEach { token in
-                if let category = InteractionCategory(
-                    rawValue: token.stringByTrimmingLeadingCharactersInSet(.whitespaces)
-                ) {
-                    enabledLoggingCategories?.insert(category)
+        enabledLoggingCategories = Set(
+                NeevaFeatureFlags.latestValue(.loggingCategories)
+                .components(separatedBy: ",")
+                .compactMap { token in
+                    InteractionCategory(
+                        rawValue: token.stringByTrimmingLeadingCharactersInSet(.whitespaces)
+                    )
                 }
-            }
+            )
     }
 
     public static func shouldAddSessionID(
