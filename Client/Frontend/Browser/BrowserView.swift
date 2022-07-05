@@ -74,6 +74,7 @@ struct BrowserView: View {
     // conditionalize SwiftUI View generation on these.
     let browserModel: BrowserModel
     let chromeModel: TabChromeModel
+    let cheatsheetPromoModel: CheatsheetPromoModel
 
     @State var safeArea = EdgeInsets()
     @State var topBarHeight: CGFloat = .zero
@@ -100,7 +101,7 @@ struct BrowserView: View {
                     }
 
                     // Bottom Bar
-                    BrowserBottomBarView(bvc: bvc).onHeightOfViewChanged { height in
+                    BrowserBottomBarView().onHeightOfViewChanged { height in
                         bottomBarHeight = height
                     }
                 }.keyboardListener(adapt: false) { height in
@@ -159,6 +160,7 @@ struct BrowserView: View {
         .environmentObject(bvc.tabContainerModel)
         .environmentObject(bvc.web3Model)
         .environmentObject(bvc.web3Model.walletDetailsModel)
+        .environmentObject(cheatsheetPromoModel)
         .environmentObject(chromeModel)
     }
 
@@ -167,5 +169,6 @@ struct BrowserView: View {
         self.bvc = bvc
         self.browserModel = bvc.browserModel
         self.chromeModel = bvc.chromeModel
+        self.cheatsheetPromoModel = bvc.cheatsheetPromoModel
     }
 }

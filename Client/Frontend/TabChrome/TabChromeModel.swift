@@ -109,7 +109,8 @@ class TabChromeModel: ObservableObject {
     }
 
     func hideZeroQuery() {
-        SceneDelegate.getBVC(with: topBarDelegate?.tabManager.scene).hideZeroQuery()
+        SceneDelegate.getBVC(with: topBarDelegate?.tabManager.scene)
+            .dismissEditingAndHideZeroQuery()
     }
 
     private func setupURLObserver() {
@@ -128,8 +129,8 @@ class TabChromeModel: ObservableObject {
                 return
             }
 
-            self.isPage = url?.displayURL?.isWebPage() ?? false
-            self.isErrorPage = InternalURL(url)?.isErrorPage ?? false
+            self.isPage = Self.isPage(url: url)
+            self.isErrorPage = Self.isErrorPage(url: url)
         }
 
         spaceRefreshSubscription = Publishers.CombineLatest(
@@ -151,7 +152,21 @@ class TabChromeModel: ObservableObject {
                 self?.urlInSpace = result
             }
         }
+    }
 
-        CheatsheetMenuViewModel.promoModel.subscribe(to: tabManager)
+    class func isPage(url: URL?) -> Bool {
+        guard let url = url?.displayURL else {
+            return false
+        }
+        return url.isWebPage()
+    }
+
+    class func isErrorPage(url: URL?) -> Bool {
+        guard let url = url,
+            let internalURL = InternalURL(url)
+        else {
+            return false
+        }
+        return internalURL.isErrorPage
     }
 }

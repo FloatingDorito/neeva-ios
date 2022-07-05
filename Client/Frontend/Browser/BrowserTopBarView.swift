@@ -57,7 +57,7 @@ struct BrowserTopBarView: View {
                             bvc.closeLazyTab()
                         }
                     } else {
-                        bvc.hideZeroQuery(wasCancelled: true)
+                        bvc.dismissEditingAndHideZeroQuery(wasCancelled: true)
                     }
                 }
             )
