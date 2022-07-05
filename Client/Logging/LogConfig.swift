@@ -7,7 +7,7 @@ import Defaults
 import Foundation
 import Shared
 
-public struct LogConfig {
+public enum LogConfig {
     // MARK: - Interactions
     public enum Interaction: String {
         /// Open tracking shield
@@ -742,7 +742,7 @@ public struct LogConfig {
         }
     }
 
-    public struct Attribute {
+    public enum Attribute {
         /// Is selected tab in private mode
         public static let IsInPrivateMode = "IsInPrivateMode"
         /// Number of all tabs (normal + incognito) opened
@@ -795,14 +795,14 @@ public struct LogConfig {
         public static let InterstitialTimeSpent = "InterstitialTimeSpent"
     }
 
-    public struct UIInteractionAttribute {
+    public enum UIInteractionAttribute {
         /// View from which an UI Interaction is triggered
         public static let fromActionType = "fromActionType"
         public static let openSysSettingSourceView = "openSysSettingSourceView"
         public static let openSysSettingTriggerFrom = "openSysSettingTriggerFrom"
     }
 
-    public struct SuggestionAttribute {
+    public enum SuggestionAttribute {
         /// suggestion position
         public static let suggestionPosition = "suggestionPosition"
         /// number of characters typed in url bar
@@ -833,7 +833,7 @@ public struct LogConfig {
         public static let timeToSelectSuggestion = "TimeToSelectSuggestion"
     }
 
-    public struct SpacesAttribute {
+    public enum SpacesAttribute {
         public static let spaceID = "space_id"
         public static let spaceEntityID = "SpaceEntityID"
         public static let isShared = "isShared"
@@ -842,17 +842,17 @@ public struct LogConfig {
         public static let socialShareApp = "ShareAppName"
     }
 
-    public struct PromoCardAttribute {
+    public enum PromoCardAttribute {
         public static let promoCardType = "promoCardType"
         public static let defaultBrowserInterstitialTrigger = "defaultBrowserInterstitialTrigger"
     }
 
-    public struct ExperimentAttribute {
+    public enum ExperimentAttribute {
         public static let experiment = "Experiment"
         public static let experimentArm = "ExperimentArm"
     }
 
-    public struct CheatsheetAttribute {
+    public enum CheatsheetAttribute {
         public static let currentCheatsheetQuery = "currentCheatsheetQuery"
         public static let currentPageURL = "currentCheatsheetPageURL"
         public static let cheatsheetQuerySource = "cheatsheetQuerySource"
@@ -872,13 +872,13 @@ public struct LogConfig {
         }
     }
 
-    public struct TabsAttribute {
+    public enum TabsAttribute {
         public static let selectedTabSection = "SelectedTabSection"
         public static let selectedTabIndex = "SelectedTabIndex"
         public static let selectedTabRow = "SelectedTabRow"
     }
 
-    public struct NotificationAttribute {
+    public enum NotificationAttribute {
         public static let notificationPromptCallSite = "NotificationPromptCallSite"
         public static let notificationAuthorizationCallSite = "notificationAuthorizationCallSite"
 
@@ -888,7 +888,7 @@ public struct LogConfig {
         public static let notificationCampaignId = "NotificationCampaignId"
     }
 
-    public struct SpotlightAttribute {
+    public enum SpotlightAttribute {
         public static let urlPayload = "urlPayload"
         public static let spaceIdPayload = "spaceIdPayload"
         public static let addActivityToSpotlight = "addActivityToSpotlight"
@@ -919,26 +919,26 @@ public struct LogConfig {
         }
     }
 
-    public struct PerformanceAttribute {
+    public enum PerformanceAttribute {
         public static let memoryUsage = "MemoryUsage"
     }
 
-    public struct TabGroupAttribute {
+    public enum TabGroupAttribute {
         public static let numTabsInTabGroup = "NumTabsInTabGroup"
         public static let TabGroupRowIndex = "SelectedTabGroupRowIndex"
         public static let isExpanded = "IsExpanded"
         public static let selectedChildTabIndex = "SelectedChildTabIndex"
     }
 
-    public struct DeeplinkAttribute {
+    public enum DeeplinkAttribute {
         public static let searchRedirect = "SearchRedirect"
     }
 
-    public struct TrackingProtectionAttribute {
+    public enum TrackingProtectionAttribute {
         public static let toggleProtectionForURL = "ToggleProtectionForURL"
     }
 
-    public struct Web3Attribute {
+    public enum Web3Attribute {
         public static let walletAddress = "WalletAddress"
         public static let connectedSite = "ConnectedSite"
         public static let partnerCollection = "PartnerCollection"
