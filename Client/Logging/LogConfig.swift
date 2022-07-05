@@ -462,21 +462,22 @@ public enum LogConfig {
         for path: LogConfig.Interaction
     ) -> Bool {
         let category = LogConfig.category(for: path)
-        let validCategory =
-            category == .FirstRun
-            || category == .Stability
-            || category == .PromoCard
-            || category == .Web3
-            || category == .Notification
-            || category == .Cheatsheet
-            || category == .CookieCutter
-            || category == .UI
-            || category == .OverflowMenu
+        let validCategories: Set<LogConfig.InteractionCategory> = [
+            .FirstRun,
+            .Stability,
+            .PromoCard,
+            .Web3,
+            .Notification,
+            .Cheatsheet,
+            .CookieCutter,
+            .UI,
+            .OverflowMenu
+        ]
 
         let validInteraction =
             path == .SpacesLoginRequired || path == .SpacesRecommendedDetailUIVisited
 
-        return validCategory || validInteraction
+        return validCategories.contains(category) || validInteraction
     }
 
     // MARK: - Category
