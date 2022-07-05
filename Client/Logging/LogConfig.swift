@@ -416,18 +416,20 @@ public struct LogConfig {
 
     private static var flagsObserver: AnyCancellable?
 
+    static let alwaysAllowedCategories: Set<InteractionCategory> = [
+        .FirstRun,
+        .Notification,
+        .Suggestions,
+        .Stability,
+        .DebugMode,
+        .PromoCard,
+        .Web3,
+        .CookieCutter,
+        .UI,
+        .OverflowMenu,
+    ]
     public static func featureFlagEnabled(for category: InteractionCategory) -> Bool {
-        if category == .FirstRun
-            || category == .Notification
-            || category == .Suggestions
-            || category == .Stability
-            || category == .DebugMode
-            || category == .PromoCard
-            || category == .Web3
-            || category == .CookieCutter
-            || category == .UI
-            || category == .OverflowMenu
-        {
+        if alwaysAllowedCategories.contains(category) {
             return true
         }
 
