@@ -448,14 +448,14 @@ public enum LogConfig {
 
     private static func updateLoggingCategory() {
         enabledLoggingCategories = Set(
-                NeevaFeatureFlags.latestValue(.loggingCategories)
+            NeevaFeatureFlags.latestValue(.loggingCategories)
                 .components(separatedBy: ",")
                 .compactMap { token in
                     InteractionCategory(
                         rawValue: token.stringByTrimmingLeadingCharactersInSet(.whitespaces)
                     )
                 }
-            )
+        )
     }
 
     public static func shouldAddSessionID(
@@ -471,7 +471,7 @@ public enum LogConfig {
             .Cheatsheet,
             .CookieCutter,
             .UI,
-            .OverflowMenu
+            .OverflowMenu,
         ]
 
         let validInteraction =
