@@ -100,6 +100,12 @@
 		20978E6C2874A9590009D346 /* CardListViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E672874A9590009D346 /* CardListViews.swift */; };
 		20978E6D2874A9590009D346 /* CardGroupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E682874A9590009D346 /* CardGroupView.swift */; };
 		20978E6F2874A9F40009D346 /* CardStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E6E2874A9F40009D346 /* CardStripView.swift */; };
+		20978E702874AE6B0009D346 /* CardListViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E672874A9590009D346 /* CardListViews.swift */; };
+		20978E712874AE6B0009D346 /* CardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E652874A9590009D346 /* CardModels.swift */; };
+		20978E722874AE6B0009D346 /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E662874A9590009D346 /* Card.swift */; };
+		20978E732874AE6B0009D346 /* CardDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E642874A9590009D346 /* CardDetails.swift */; };
+		20978E742874AE6B0009D346 /* CardGroupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E682874A9590009D346 /* CardGroupView.swift */; };
+		20978E752874AE720009D346 /* CardStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20978E6E2874A9F40009D346 /* CardStripView.swift */; };
 		2097EC152835B4EB00A41DD8 /* SceneUIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2097EC142835B4EB00A41DD8 /* SceneUIState.swift */; };
 		209CD9A327DBF9F20069675C /* TabGroupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209CD9A227DBF9F20069675C /* TabGroupTests.swift */; };
 		20A5D15327F6A43E00DB88FE /* HistoryPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A5D15227F6A43E00DB88FE /* HistoryPanelView.swift */; };
@@ -6982,6 +6988,7 @@
 				4A42C41327E58487003B9826 /* LocationLabel.swift in Sources */,
 				4A42C41427E58487003B9826 /* Authenticator.swift in Sources */,
 				4A42C41527E58487003B9826 /* WalletDashboard.swift in Sources */,
+				20978E752874AE720009D346 /* CardStripView.swift in Sources */,
 				4A42C41627E58487003B9826 /* TextSizeView.swift in Sources */,
 				4A42C41727E58487003B9826 /* TabManager+TestSupport.swift in Sources */,
 				4A42C41827E58487003B9826 /* UserScriptManager.swift in Sources */,
@@ -6990,6 +6997,7 @@
 				4A42C41B27E58487003B9826 /* BrowserTopBarView.swift in Sources */,
 				4A42C41C27E58487003B9826 /* TabManager+AddTab.swift in Sources */,
 				4A42C41D27E58487003B9826 /* PanelDataObservers.swift in Sources */,
+				20978E742874AE6B0009D346 /* CardGroupView.swift in Sources */,
 				4A42C41E27E58487003B9826 /* GroupedButtonView.swift in Sources */,
 				4A42C41F27E58487003B9826 /* LocalNotificiations.swift in Sources */,
 				4A42C42027E58487003B9826 /* SceneDelegate.swift in Sources */,
@@ -7023,6 +7031,7 @@
 				4A42C43927E58487003B9826 /* SearchQueryModel.swift in Sources */,
 				4A42C43A27E58487003B9826 /* NotificationViewManager.swift in Sources */,
 				4A42C43B27E58487003B9826 /* KeyboardListener.swift in Sources */,
+				20978E702874AE6B0009D346 /* CardListViews.swift in Sources */,
 				4A42C43C27E58487003B9826 /* RelatedRecipeView.swift in Sources */,
 				4A42C43D27E58487003B9826 /* FaviconResolver.swift in Sources */,
 				E677D1D52800E8C10060869F /* SiteListView.swift in Sources */,
@@ -7246,6 +7255,7 @@
 				4A42C4EF27E58487003B9826 /* UIPasteboardExtensions.swift in Sources */,
 				4A42C4F027E58487003B9826 /* NavigationRouter.swift in Sources */,
 				4A42C4F127E58487003B9826 /* FormPostHelper.swift in Sources */,
+				20978E722874AE6B0009D346 /* Card.swift in Sources */,
 				4A42C4F227E58487003B9826 /* TitleActivityItemProvider.swift in Sources */,
 				4A42C4F327E58487003B9826 /* SiteTableViewController.swift in Sources */,
 				4A42C4F427E58487003B9826 /* ViewExtensions.swift in Sources */,
@@ -7369,6 +7379,7 @@
 				E67B0B48280F0296008D1CCD /* YourCollectionDetailView.swift in Sources */,
 				4A42C55227E58487003B9826 /* BrowserViewController.swift in Sources */,
 				20167FCE2824601900223B9E /* FindView.swift in Sources */,
+				20978E712874AE6B0009D346 /* CardModels.swift in Sources */,
 				4A42C55327E58487003B9826 /* SuggestionsContent.swift in Sources */,
 				4A42C55427E58487003B9826 /* SpacesFilterView.swift in Sources */,
 				4A42C55527E58487003B9826 /* NeevaScopeLoadingKeyFrameView.swift in Sources */,
@@ -7378,6 +7389,7 @@
 				4A42C55927E58487003B9826 /* BrowserViewController+SKStoreProductViewControllerDelegate.swift in Sources */,
 				4A42C55A27E58487003B9826 /* SuggestionBlocks.swift in Sources */,
 				4A42C55C27E58487003B9826 /* OverflowMenuView.swift in Sources */,
+				20978E732874AE6B0009D346 /* CardDetails.swift in Sources */,
 				4A42C55D27E58487003B9826 /* DownloadQueue.swift in Sources */,
 				4A42C55E27E58487003B9826 /* NeevaExperimentExtensions.swift in Sources */,
 				4A42C55F27E58487003B9826 /* BackForwardListView.swift in Sources */,
