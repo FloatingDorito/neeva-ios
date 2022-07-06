@@ -265,8 +265,6 @@ extension TabManager {
             }
         }
 
-        updateAllTabDataAndSendNotifications(notify: true)
-
         // Prevents a sticky tab tray
         SceneDelegate.getBVC(with: scene).browserModel.cardTransitionModel.update(to: .hidden)
 
@@ -281,6 +279,7 @@ extension TabManager {
             recentlyClosedTabs.remove(at: index)
         }
 
+        updateAllTabDataAndSendNotifications(notify: true)
         closedTabsToShowToastFor.removeAll { savedTabs.contains($0) }
 
         return selectedSavedTab
