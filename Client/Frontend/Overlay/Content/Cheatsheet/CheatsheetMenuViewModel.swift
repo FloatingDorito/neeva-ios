@@ -251,9 +251,11 @@ public class CheatsheetMenuViewModel: ObservableObject {
                 results.append(.discussions(ugcDiscussion))
             } else {
                 if let inputURL = sourcePage?.url,
-                   let canonicalURL = CanonicalURL(from: inputURL, stripMobile: true, relaxed: true)?.asString,
-                   let result = BloomFilterManager.shared.contains(canonicalURL),
-                   !result
+                    let canonicalURL = CanonicalURL(
+                        from: inputURL, stripMobile: true, relaxed: true
+                    )?.asString,
+                    let result = BloomFilterManager.shared.contains(canonicalURL),
+                    !result
                 {
                     DispatchQueue.main.async {
                         ClientLogger.shared.logCounter(
