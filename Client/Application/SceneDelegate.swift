@@ -136,6 +136,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         bvc.tabManager.removeBlankTabs()
         bvc.downloadQueue.resumeAll()
 
+        var attributes = EnvironmentHelper.shared.getAttributes()
+        if !NeevaUserInfo.shared.hasLoginCookie(),
+            let token = Defaults[.notificationToken]
+        {
+            attributes.append(
+                ClientLogCounterAttribute(
+                    key: LogConfig.Attribute.pushNotificationToken,
+                    value: token
+                )
+            )
+        }
         ClientLogger.shared.logCounter(
             .AppEnterForeground,
             attributes: EnvironmentHelper.shared.getAttributes()
@@ -143,6 +154,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // send number of spotlight index events from the last session
         sendAggregatedSpotlightLogs()
+        // send number of cheatsheet stats from the last session
+        sendAggregatedCheatsheetLogs()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
@@ -637,5 +650,38 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         Defaults[.numOfThumbnailsForUserActivity] = 0
         Defaults[.numOfWillIndexEvents] = 0
         Defaults[.numOfDidIndexEvents] = 0
+    }
+
+    func sendAggregatedCheatsheetLogs() {
+        ClientLogger.shared.logCounter(
+            .CheatsheetUGCStatsForSession,
+            attributes: EnvironmentHelper.shared.getAttributes() + [
+                ClientLogCounterAttribute(
+                    key: LogConfig.CheatsheetAttribute.UGCStat.filterHealth.rawValue,
+                    value: Defaults[.redditFilterHealth]
+                ),
+                ClientLogCounterAttribute(
+                    key: LogConfig.CheatsheetAttribute.UGCStat.ugcTest.rawValue,
+                    value: String(Defaults[.numOfUGCTests])
+                ),
+                ClientLogCounterAttribute(
+                    key: LogConfig.CheatsheetAttribute.UGCStat.ugcCanonicalError.rawValue,
+                    value: String(Defaults[.numOfUGCCanonicalError])
+                ),
+                ClientLogCounterAttribute(
+                    key: LogConfig.CheatsheetAttribute.UGCStat.ugcHit.rawValue,
+                    value: String(Defaults[.numOfUGCHits])
+                ),
+                ClientLogCounterAttribute(
+                    key: LogConfig.CheatsheetAttribute.UGCStat.ugcClear.rawValue,
+                    value: String(Defaults[.numOfUGCClears])
+                ),
+            ]
+        )
+        Defaults[.numOfUGCTests] = 0
+        Defaults[.numOfUGCCanonicalError] = 0
+        Defaults[.numOfUGCHits] = 0
+        Defaults[.numOfUGCClears] = 0
+        Defaults[.redditFilterHealth] = ""
     }
 }

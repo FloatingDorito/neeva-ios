@@ -23,7 +23,6 @@ class InterstitialViewModel: ObservableObject {
 
     var didTakeAction = false
 
-    var isInExperimentArm: Bool
     var onboardingState: OnboardingState
 
     var onboardingAppearTimestamp: Date?
@@ -40,7 +39,6 @@ class InterstitialViewModel: ObservableObject {
         showRemindButton: Bool = true,
         restoreFromBackground: Bool = false,
         showCloseButton: Bool = true,
-        isInExperimentArm: Bool = false,
         onboardingState: OnboardingState = .initialState,
         onOpenSettingsAction: (() -> Void)? = nil,
         onCloseAction: (() -> Void)? = nil
@@ -52,7 +50,6 @@ class InterstitialViewModel: ObservableObject {
         self.onOpenSettingsAction = onOpenSettingsAction
         self.onCloseAction = onCloseAction
         self.onboardingState = onboardingState
-        self.isInExperimentArm = isInExperimentArm
 
         self.openButtonText = restoreFromBackground ? "Back to Settings" : "Open Neeva Settings"
         self.remindButtonText = restoreFromBackground ? "Continue to Neeva" : "Remind Me Later"
@@ -151,11 +148,19 @@ class InterstitialViewModel: ObservableObject {
     }
 
     func welcomePageBullets() -> [String] {
-        return [
-            "Ad-Free Search",
-            "Block Ads. Block Trackers",
-            "Block Cookie Pop-ups",
-        ]
+        if NeevaExperiment.arm(for: .defaultBrowserWelcomeV2) == .welcomeV2 {
+            return [
+                "Ad-free search results",
+                "Browser without ads or trackers",
+                "Cookie pop-up blocker",
+            ]
+        } else {
+            return [
+                "Ad-Free Search",
+                "Block Ads. Block Trackers",
+                "Block Cookie Pop-ups",
+            ]
+        }
     }
 
     func onboardingPageBullets() -> [String] {
