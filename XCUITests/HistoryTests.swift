@@ -17,13 +17,14 @@ let closedWebPageLabel = "localhost:\(serverPort)/test-fixture/test-mozilla-book
 class HistoryTests: BaseTestCase {
     let testWithDB = [
         "testOpenHistoryFromBrowserContextMenuOptions", "testClearHistoryFromSettings",
-        "testClearRecentHistory", "testSearchHistory", "testDeleteItem", "testOpenItemOnTap", "testOpenInNewTab", "testOpenInNewIncognitoTab"
+        "testClearRecentHistory", "testSearchHistory", "testDeleteItem", "testOpenItemOnTap",
+        "testOpenInNewTab", "testOpenInNewIncognitoTab",
     ]
 
     // This DDBB contains those 4 websites listed in the name
     let historyDB = "browserYoutubeTwitterMozillaExample.db"
     let clearRecentHistoryOptions = ["Last Hour", "Today", "Today & Yesterday", "Everything"]
-    
+
     override func setUp() {
         if testWithDB.contains(testName) {
             // for the current test name, add the db fixture used
@@ -50,7 +51,7 @@ class HistoryTests: BaseTestCase {
         app.buttons["Settings"].tap()
         app.navigationBars["Settings"].buttons["Done"].tap()
     }
-    
+
     // Private function created to select desired option from the "Clear Recent History" list
     // We used this aproch to avoid code duplication
     private func tapOnClearRecentHistoryOption(optionSelected: String) {
@@ -107,7 +108,7 @@ class HistoryTests: BaseTestCase {
             waitForExistence(app.buttons["Clear Recent History"])
             app.buttons["Clear Recent History"].tap()
         }
-        
+
         goToHistory()
         waitForExistence(app.buttons["Clear Recent History"])
         app.buttons["Clear Recent History"].tap()
@@ -120,7 +121,7 @@ class HistoryTests: BaseTestCase {
         }
 
         reset()
-        
+
         // Today.
         // Recent data will be removed after calling tapOnClearRecentHistoryOption(optionSelected: "Today").
         // Older data will not be removed
@@ -131,7 +132,7 @@ class HistoryTests: BaseTestCase {
         XCTAssertFalse(app.buttons["example.com"].exists)
 
         reset()
-        
+
         // Today & Yesterday.
         // Tapping "Today and Yesterday" will remove recent data (from yesterday and today).
         // Older data will not be removed
@@ -142,7 +143,7 @@ class HistoryTests: BaseTestCase {
         XCTAssertFalse(app.buttons["example.com"].exists)
 
         reset()
-        
+
         // Everything.
         // Tapping everything removes both current data and older data.
         tapOnClearRecentHistoryOption(optionSelected: "Everything")
@@ -153,63 +154,63 @@ class HistoryTests: BaseTestCase {
         XCTAssertFalse(app.tables.cells.staticTexts["example.com"].exists)
         waitForExistence(app.staticTexts["History List Empty"])
     }
-    
+
     // MARK: - Delete
     func testDeleteItem() {
         goToHistory()
-        
+
         waitForExistence(app.buttons["Twitter"])
         app.buttons["Twitter"].press(forDuration: 1)
         app.buttons["Delete"].tap()
-        
+
         waitForNoExistence(app.buttons["Twitter"])
     }
-    
+
     // MARK: - Empty History
     func testEmptyHistoryListFirstTime() {
         // Go to History List from Top Sites and check it is empty
         goToHistory()
         waitForExistence(app.staticTexts["History List Empty"])
     }
-    
+
     // MARK: - Open
     func testOpenItemOnTap() {
         openURL("example.com")
-        
+
         goToHistory()
         waitForExistence(app.buttons["Twitter"])
         app.buttons["Twitter"].tap()
-        
+
         XCTAssertEqual(getNumberOfTabs(), 2)
     }
-    
+
     // MARK: - Open in New Tab
     func testOpenInNewTab() {
         openURL("example.com")
         goToHistory()
-        
+
         waitForExistence(app.buttons["Twitter"])
         app.buttons["Twitter"].press(forDuration: 1)
         app.buttons["Open in new tab"].tap()
-        
+
         waitForExistence(app.buttons["Switch"])
         app.buttons["Done"].tap()
-        
+
         goToTabTray()
         XCTAssertEqual(getNumberOfTabs(openTabTray: false), 2)
     }
-    
+
     func testOpenInNewIncognitoTab() {
         openURL("example.com")
         goToHistory()
-        
+
         waitForExistence(app.buttons["Twitter"])
         app.buttons["Twitter"].press(forDuration: 1)
         app.buttons["Open in new incognito tab"].tap()
-        
+
         waitForExistence(app.buttons["Switch"])
         app.buttons["Done"].tap()
-        
+
         setIncognitoMode(enabled: true, shouldOpenURL: false, closeTabTray: false)
         XCTAssertEqual(getNumberOfTabs(openTabTray: false), 1)
     }

@@ -9,7 +9,7 @@ class RecentlyClosedTests: BaseTestCase {
         goToTabTray()
         app.buttons["Add Tab"].press(forDuration: 1)
     }
-    
+
     func testRecentlyClosedOptionAvailable() {
         // Now go back to default website close it and check whether the option is enabled
         openURL(path(forTestPage: "test-mozilla-book.html"))
@@ -60,7 +60,7 @@ class RecentlyClosedTests: BaseTestCase {
         showRecentlyClosedTabs()
         XCTAssertTrue(app.buttons["The Book of Mozilla"].exists)
     }
-    
+
     // MARK: - Open in New Tab
     func testOpenInNewTabRecentlyClosedItemFromMenu() {
         // test the recently closed tab menu
