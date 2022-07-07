@@ -23,29 +23,10 @@ class ScrollingControlModel: NSObject, ObservableObject {
     @Published private(set) var headerTopOffset: CGFloat = 0
     @Published private(set) var footerBottomOffset: CGFloat = 0
 
-    var controlOpacity: Double {
-        let alpha = 1 - abs(headerTopOffset / topScrollHeight)
-        return Double(alpha)
-    }
-
     private let chromeModel: TabChromeModel
+    private var tab: Tab?
 
-    init(tabManager: TabManager, chromeModel: TabChromeModel) {
-        self.scrollView = tabManager.selectedTab?.webView!.scrollView
-        self.chromeModel = chromeModel
-        super.init()
-
-        setupDelegates(newTab: tabManager.selectedTab)
-
-        tabManager.selectedTabPublisher
-            .sink { [weak self] newTab in
-                guard let self = self else { return }
-                self.setupDelegates(newTab: newTab)
-            }
-            .store(in: &subscriptions)
-    }
-
-    private var headerHeight: CGFloat = 0
+    private(set) var headerHeight: CGFloat = 0
     private(set) var footerHeight: CGFloat = 0
 
     private var subscriptions: Set<AnyCancellable> = []
@@ -55,8 +36,11 @@ class ScrollingControlModel: NSObject, ObservableObject {
     fileprivate var isZoomedOut = false
     fileprivate var lastZoomedScale: CGFloat = 0
     fileprivate var isUserZoom = false
-
-    private var tab: Tab?
+    
+    var controlOpacity: Double {
+        let alpha = 1 - abs(headerTopOffset / topScrollHeight)
+        return Double(alpha)
+    }
 
     fileprivate lazy var panGesture: UIPanGestureRecognizer = {
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
@@ -168,6 +152,22 @@ class ScrollingControlModel: NSObject, ObservableObject {
 
     fileprivate func roundNum(_ num: CGFloat) -> CGFloat {
         return round(100 * num) / 100
+    }
+    
+    // MARK: - init
+    init(tabManager: TabManager, chromeModel: TabChromeModel) {
+        self.scrollView = tabManager.selectedTab?.webView!.scrollView
+        self.chromeModel = chromeModel
+        super.init()
+
+        setupDelegates(newTab: tabManager.selectedTab)
+
+        tabManager.selectedTabPublisher
+            .sink { [weak self] newTab in
+                guard let self = self else { return }
+                self.setupDelegates(newTab: newTab)
+            }
+            .store(in: &subscriptions)
     }
 }
 

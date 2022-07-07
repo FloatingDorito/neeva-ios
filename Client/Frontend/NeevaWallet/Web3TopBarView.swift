@@ -31,10 +31,6 @@ struct Web3TopBarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if UIConstants.enableBottomURLBar {
-                separator.padding(.bottom, chrome.inlineToolbar ? 0 : 3)
-            }
-
             HStack(spacing: chrome.inlineToolbar ? 12 : 0) {
                 if chrome.inlineToolbar && !chrome.isEditingLocation {
                     Group {
@@ -117,9 +113,7 @@ struct Web3TopBarView: View {
             .transition(.opacity)
             .animation(.spring(), value: chrome.estimatedProgress)
 
-            if !UIConstants.enableBottomURLBar {
-                separator
-            }
+            separator
         }
         .background(
             GeometryReader { geom in
@@ -135,7 +129,6 @@ struct Web3TopBarView: View {
         .accessibilityElement(children: .contain)
         .offset(
             y: scrollingControlModel.headerTopOffset
-                * (UIConstants.enableBottomURLBar ? -1 : 1)
         )
     }
 }
