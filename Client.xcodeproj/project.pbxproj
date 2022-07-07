@@ -1579,6 +1579,7 @@
 		F80983C62838A0630039FCBD /* AppearanceSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80983B8283848450039FCBD /* AppearanceSettingsSection.swift */; };
 		F82EF4DB283360FA0030F185 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = E6639F171BF11E17002D0853 /* Settings.bundle */; };
 		F82EF4DC283361270030F185 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = E6639F171BF11E17002D0853 /* Settings.bundle */; };
+		F82F28752876289600F7E0EA /* StoreKitLocalTesting.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F8F360362875066200736740 /* StoreKitLocalTesting.storekit */; };
 		F8418EDE282B2EBA004F1305 /* SpacesLoginRequiredView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8418EDD282B2EBA004F1305 /* SpacesLoginRequiredView.swift */; };
 		F8418EE3282B6D6A004F1305 /* SpacesLoginRequiredView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8418EDD282B2EBA004F1305 /* SpacesLoginRequiredView.swift */; };
 		F84B21DA1A090F8100AAB793 /* ClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84B21D91A090F8100AAB793 /* ClientTests.swift */; };
@@ -1586,6 +1587,8 @@
 		F84B220B1A0910F600AAB793 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F84B21EF1A0910F600AAB793 /* Images.xcassets */; };
 		F84B22541A0920C600AAB793 /* ShareTo.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F84B22491A0920C600AAB793 /* ShareTo.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F8708D2E1A0970B70051AB07 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F8708D251A0970990051AB07 /* Images.xcassets */; };
+		F8F360332874D9B800736740 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8F360322874D9B800736740 /* StoreKit.framework */; };
+		F8F360352874DA6700736740 /* NeevaPremium.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F360342874DA6700736740 /* NeevaPremium.swift */; };
 		FA6B2AC21D41F02D00429414 /* Punycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6B2AC11D41F02D00429414 /* Punycode.swift */; };
 		FA6B2AC41D41F02D00429414 /* Punycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6B2AC11D41F02D00429414 /* Punycode.swift */; };
 /* End PBXBuildFile section */
@@ -2986,6 +2989,9 @@
 		F84B22491A0920C600AAB793 /* ShareTo.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareTo.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8708D251A0970990051AB07 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		F8708D261A0970990051AB07 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F8F360322874D9B800736740 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		F8F360342874DA6700736740 /* NeevaPremium.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeevaPremium.swift; sourceTree = "<group>"; };
+		F8F360362875066200736740 /* StoreKitLocalTesting.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = StoreKitLocalTesting.storekit; sourceTree = "<group>"; };
 		FA6B2AC11D41F02D00429414 /* Punycode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Punycode.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -3026,6 +3032,7 @@
 				C8E18F20222EDED000E30E52 /* SafariServices.framework in Frameworks */,
 				C8E18F1E222EDE4500E30E52 /* Accelerate.framework in Frameworks */,
 				E6231C051B90A472005ABB0D /* libxml2.2.tbd in Frameworks */,
+				F8F360332874D9B800736740 /* StoreKit.framework in Frameworks */,
 				E6231C011B90A44F005ABB0D /* libz.tbd in Frameworks */,
 				E942D43A2819BA8100B4A3EC /* HTMLEntities in Frameworks */,
 				E4B3348A1BBF23F9004E2BFF /* AdSupport.framework in Frameworks */,
@@ -4153,6 +4160,7 @@
 		7B604FC11C496005006EEEC3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F8F360322874D9B800736740 /* StoreKit.framework */,
 				6786EA782761C58300B53127 /* libswift_Concurrency.tbd */,
 				C8E18F1D222EDE4400E30E52 /* Accelerate.framework */,
 				E4B334891BBF23F9004E2BFF /* AdSupport.framework */,
@@ -4634,6 +4642,7 @@
 				C9B2D28126612EF7005EF5AD /* NeevaAccountRow.swift */,
 				C98E40562658504C003AC0E2 /* NeevaSettingsSection.swift */,
 				C9D4A000265BE0B000299FC2 /* NeevaAccountInfoView.swift */,
+				F8F360342874DA6700736740 /* NeevaPremium.swift */,
 			);
 			path = Neeva;
 			sourceTree = "<group>";
@@ -5391,6 +5400,7 @@
 				7BEFC67F1BFF68C30059C952 /* QuickActions.swift */,
 				E6639F171BF11E17002D0853 /* Settings.bundle */,
 				E40FAB0B1A7ABB77009CB80D /* WebServer.swift */,
+				F8F360362875066200736740 /* StoreKitLocalTesting.storekit */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -6550,6 +6560,7 @@
 				BC93EE862654E31300D1AA07 /* Color.xcassets in Resources */,
 				E4A961381AC06FA50069AD6F /* ReaderViewLoading.html in Resources */,
 				672D1C58280A0A3B0043F4E6 /* easy_list.json in Resources */,
+				F82F28752876289600F7E0EA /* StoreKitLocalTesting.storekit in Resources */,
 				F80983C528387B6D0039FCBD /* System@2x.png in Resources */,
 				E4ECCDAE1AB131770005E717 /* FiraSans-Medium.ttf in Resources */,
 				E4424B3C1AC71FB400F44C38 /* FiraSans-Book.ttf in Resources */,
@@ -7945,6 +7956,7 @@
 				6679BBBA276AAFD700290041 /* SpacesFilterView.swift in Sources */,
 				32FAB3DF27B62A5F00FEBDFE /* NeevaScopeLoadingKeyFrameView.swift in Sources */,
 				C9BED4C12667FA91001D9C77 /* SuggestedSearchViews.swift in Sources */,
+				F8F360352874DA6700736740 /* NeevaPremium.swift in Sources */,
 				32FAB3E027B62A5F00FEBDFE /* NeevaScopeLoadingTimeline.swift in Sources */,
 				4A255AB6265C4A2A00422839 /* TrackingPreventionConfig.swift in Sources */,
 				66B6567626C4667B00D25767 /* BrowserViewController+SKStoreProductViewControllerDelegate.swift in Sources */,

@@ -12,6 +12,7 @@ struct NeevaAccountInfoView: View {
     @State var signingOut = false
     @Binding var isPresented: Bool
     @ObservedObject var userInfo: NeevaUserInfo
+    @State var showingPremium = false
 
     var body: some View {
         List {
@@ -37,78 +38,25 @@ struct NeevaAccountInfoView: View {
                 )
             }.accessibilityElement(children: .combine)
 
-            switch userInfo.subscriptionType {
-            case .basic:
-                Section(header: Text("Membership Status")) {
-                    VStack(alignment: .leading) {
-                        Text(SubscriptionType.basic.displayName)
-                            .withFont(.headingMedium)
-                            .padding(4)
-                            .padding(.horizontal, 4)
-                            .foregroundColor(.brand.charcoal)
-                            .background(SubscriptionType.basic.color)
-                            .cornerRadius(4)
+            Section(header: Text("Membership Status"), footer: membershipStatusFooterText) {
+                membershipStatusBody
 
-                        Text(
-                            "Neeva’s Free Basic membership gives you access to all Neeva search and personalization features."
-                        )
-                        .withFont(.bodyLarge)
-                        .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.vertical, 5)
-                    .accessibilityElement(children: .combine)
-                }
-            case .premium, .lifetime:
-                Section(
-                    header: Text("Membership Status"),
-                    footer: Group {
-                        if userInfo.subscriptionType != .lifetime {
-                            Text(
-                                "Please sign in to Neeva from your computer to manage your membership."
-                            )
+                if #available(iOS 15, *) {
+                    NavigationLink(
+                        destination: NeevaPremium(),
+                        isActive: $showingPremium
+                    ) {
+                        HStack {
+                            Text("Your Subscription")
+                            Spacer()
+                            Text("Free")
                         }
                     }
-                ) {
-                    VStack(alignment: .leading) {
-                        Text(SubscriptionType.premium.displayName)
-                            .withFont(.headingMedium)
-                            .padding(4)
-                            .padding(.horizontal, 4)
-                            .foregroundColor(.brand.charcoal)
-                            .background(SubscriptionType.premium.color)
-                            .cornerRadius(4)
-
-                        if userInfo.subscriptionType == .lifetime {
-                            Text(
-                                "As a winner in Neeva's referral competition, you are a lifetime Premium member of Neeva."
-                            )
-                            .withFont(.bodyLarge)
-                            .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        Text(
-                            "If you have any questions or need assistance with your Premium membership, please reach out to premium@neeva.co."
-                        )
-                        .withFont(.bodyLarge)
-                        .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.vertical, 5)
-                    .accessibilityElement(children: .combine)
-
-                    NavigationLinkButton("View Benefits") {
-                        openURL(NeevaConstants.appMembershipURL)
-                    }
-                }
-
-            default:
-                Section(
-                    header: Text(
-                        "\(Image(systemSymbol: .exclamationmarkTriangleFill)) Membership Status Unavailable"
-                    )
-                ) {
-                    Button("Learn More on the Neeva Website") {
-                        openURL(NeevaConstants.appMembershipURL)
-                    }
+                } else {
+                    /*
+                     TODO: if a user is paying and payment source is apple,
+                     but this is an older OS, should we add a message to the user?
+                     */
                 }
             }
 
@@ -142,6 +90,89 @@ struct NeevaAccountInfoView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle(userInfo.displayName ?? "Neeva Account")
+    }
+
+    private var membershipStatusFooterText: some View {
+        switch userInfo.subscriptionType {
+        case .basic:
+            return EmptyView()
+        case .premium, .lifetime:
+            /*
+             TODO: when the GQL API has subscription source and the user
+             does NOT pay through Apple, we need to direct them to manage
+             their subscription else where.
+
+             if userInfo.subscription.source != .apple {
+                 if userInfo.subscriptionType != .lifetime {
+                     return Text("Please sign in to Neeva from your computer to manage your membership.")
+                 else {
+                     return EmptyView()
+                 }
+             } else {
+                 return EmptyView()
+             }
+             */
+
+            return EmptyView()
+        default:
+            return EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private var membershipStatusBody: some View {
+        switch userInfo.subscriptionType {
+        case .basic:
+            VStack(alignment: .leading) {
+                Text(SubscriptionType.basic.displayName)
+                    .withFont(.headingMedium)
+                    .padding(4)
+                    .padding(.horizontal, 4)
+                    .foregroundColor(.brand.charcoal)
+                    .background(SubscriptionType.basic.color)
+                    .cornerRadius(4)
+
+                Text(
+                    "Neeva’s Free Basic membership gives you access to all Neeva search and personalization features."
+                )
+                .withFont(.bodyLarge)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        case .premium, .lifetime:
+            VStack(alignment: .leading) {
+                Text(SubscriptionType.premium.displayName)
+                    .withFont(.headingMedium)
+                    .padding(4)
+                    .padding(.horizontal, 4)
+                    .foregroundColor(.brand.charcoal)
+                    .background(SubscriptionType.premium.color)
+                    .cornerRadius(4)
+
+                if userInfo.subscriptionType == .lifetime {
+                    Text(
+                        "As a winner in Neeva's referral competition, you are a lifetime Premium member of Neeva."
+                    )
+                    .withFont(.bodyLarge)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Text(
+                    "If you have any questions or need assistance with your Premium membership, please reach out to premium@neeva.co."
+                )
+                .withFont(.bodyLarge)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
+            NavigationLinkButton("View Benefits") {
+                openURL(NeevaConstants.appMembershipURL)
+            }
+        default:
+            VStack {
+                Button("Learn More on the Neeva Website") {
+                    openURL(NeevaConstants.appMembershipURL)
+                }
+            }
+        }
     }
 }
 
