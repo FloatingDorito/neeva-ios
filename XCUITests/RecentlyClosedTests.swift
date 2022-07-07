@@ -127,15 +127,17 @@ class RecentlyClosedTests: BaseTestCase {
         setIncognitoMode(enabled: true)
 
         // Open the default website
-        openURL(path(forTestPage: "test-mozilla-book.html"))
+        openURL()
         waitUntilPageLoad()
         closeAllTabs()
 
         showRecentlyClosedTabs()
-        XCTAssertFalse(app.buttons["The Book of Mozilla"].exists)
+        XCTAssertFalse(app.buttons["Example Domain"].exists)
     }
 
     func testIncognitoClosedSiteDoesNotAppearOnRecentlyClosed() {
+        clearPrivateData()
+
         setIncognitoMode(enabled: true)
         goToHistory()
         waitForExistence(app.staticTexts["History List Empty"])
