@@ -361,7 +361,7 @@ struct TabGroupHeader: View {
                 .accessibility(value: Text(groupDetails.title))
 
             Spacer()
-            
+
             if groupDetails.allDetails.count > columns.count {
                 Button {
                     if groupDetails.isExpanded {
@@ -491,7 +491,7 @@ func getLogCounterAttributesForTabGroups(
 
         )
     )
-    
+
     if let expanded = expanded {
         attributes.append(
             ClientLogCounterAttribute(
@@ -503,6 +503,6 @@ func getLogCounterAttributesForTabGroups(
         ClientLogCounterAttribute(
             key: LogConfig.TabGroupAttribute.numTabsInTabGroup, value: String(numTabs))
     )
-    
+
     return attributes
 }

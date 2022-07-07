@@ -36,7 +36,7 @@ class ScrollingControlModel: NSObject, ObservableObject {
     fileprivate var isZoomedOut = false
     fileprivate var lastZoomedScale: CGFloat = 0
     fileprivate var isUserZoom = false
-    
+
     var controlOpacity: Double {
         let alpha = 1 - abs(headerTopOffset / topScrollHeight)
         return Double(alpha)
@@ -153,7 +153,7 @@ class ScrollingControlModel: NSObject, ObservableObject {
     fileprivate func roundNum(_ num: CGFloat) -> CGFloat {
         return round(100 * num) / 100
     }
-    
+
     // MARK: - init
     init(tabManager: TabManager, chromeModel: TabChromeModel) {
         self.scrollView = tabManager.selectedTab?.webView!.scrollView
